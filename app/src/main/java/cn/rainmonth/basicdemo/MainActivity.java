@@ -14,6 +14,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import cn.rainmonth.basicdemo.ui.material.ScrollingActivity;
+import cn.rainmonth.basicdemo.ui.material.TabbedActivity;
+import cn.rainmonth.basicdemo.ui.viewpager.ViewPagerDemoActivity;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override

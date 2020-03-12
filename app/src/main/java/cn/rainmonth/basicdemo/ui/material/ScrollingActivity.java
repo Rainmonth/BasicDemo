@@ -1,9 +1,11 @@
-package cn.rainmonth.basicdemo;
+package cn.rainmonth.basicdemo.ui.material;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import cn.rainmonth.basicdemo.R;
 
 public class ScrollingActivity extends AppCompatActivity {
 

@@ -1,4 +1,4 @@
-package cn.rainmonth.basicdemo;
+package cn.rainmonth.basicdemo.ui.material;
 
 import android.os.Bundle;
 
@@ -13,6 +13,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import cn.rainmonth.basicdemo.R;
 import cn.rainmonth.basicdemo.ui.main.SectionsPagerAdapter;
 
 public class TabbedActivity extends AppCompatActivity {

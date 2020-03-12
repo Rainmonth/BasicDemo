@@ -1,4 +1,4 @@
-package cn.rainmonth.basicdemo;
+package cn.rainmonth.basicdemo.ui.viewpager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.PagerAdapter;
@@ -12,6 +12,8 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.rainmonth.basicdemo.R;
 
 public class ViewPagerDemoActivity extends AppCompatActivity {
 
