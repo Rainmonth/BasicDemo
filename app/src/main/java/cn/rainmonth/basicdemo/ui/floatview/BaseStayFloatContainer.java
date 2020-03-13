@@ -1,10 +1,18 @@
 package cn.rainmonth.basicdemo.ui.floatview;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 
 import androidx.annotation.IntDef;
@@ -23,12 +31,13 @@ import java.lang.annotation.RetentionPolicy;
 public class BaseStayFloatContainer extends FrameLayout {
 
     private FloatCallback mCallback;                                // 悬浮回调
+    public static final int SNAP_DEFAULT = -1;                      // 默认
     public static final int SNAP_TOP = 0;                           // 吸附在顶部
     public static final int SNAP_BOTTOM = 1;                        // 吸附在底部
     public static final int SNAP_LEFT = 2;                          // 吸附在左边
     public static final int SNAP_RIGHT = 3;                         // 吸附在右边
 
-    @IntDef({SNAP_TOP, SNAP_BOTTOM, SNAP_LEFT, SNAP_RIGHT})
+    @IntDef({SNAP_DEFAULT, SNAP_TOP, SNAP_BOTTOM, SNAP_LEFT, SNAP_RIGHT})
     @Retention(RetentionPolicy.SOURCE)
     @interface StayPosition {                                           // 吸附的方向
 
@@ -41,9 +50,12 @@ public class BaseStayFloatContainer extends FrameLayout {
     private float mOriginalX, mOriginalY, mOriginalRawX, mOriginalRawY;
     private long mLastTouchDownTime;                                // 上次按下的时间
 
+    private Handler mHandler;                                       //
     private float mStatusBarHeight;
     private float mScreenWidth, mScreenHeight;
-    private boolean isCoverStatusBar = true;                               // 是否覆盖状态栏
+    private float mFloatInvisibleWidth;                             // 吸附状态下不可见的宽度
+    private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
+    private boolean mIsUnderSnap = false;                           // 是否处于吸附状态
 
     public BaseStayFloatContainer(@NonNull Context context) {
         this(context, null);
@@ -60,6 +72,7 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     private void init() {
         // 初始化
+        mHandler = new Handler(Looper.getMainLooper());
         mScreenWidth = DpUtils.getScreenWidth(getContext());
         mScreenHeight = DpUtils.getScreenHeight(getContext());
         mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
@@ -103,6 +116,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         mOriginalRawY = event.getRawY();
         mLastTouchDownTime = System.currentTimeMillis();
 
+        stopRotateAnim(this);
         if (mCallback != null) {
             mCallback.onFloatPress();
         }
@@ -137,7 +151,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             desX = mScreenWidth - getWidth() / 4f;
         }
         setX(desX);
-        if (isCoverStatusBar) {
+        if (mIsCoverStatusBar) {
             if (desY < -mStatusBarHeight) {
                 desY = -mStatusBarHeight;
             }
@@ -169,29 +183,46 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
         // doNoting
 
-        // 根据时间差判断是否要进行时间点击处理
+        // 优先点击处理，根据时间差判断是否要进行时间点击处理
         if (isNeedPerformClick()) {
-            if (mCallback != null) {
-                mCallback.onFloatClick();
+            if (isUnderSnap()) {// 吸附状态
+                // todo 展开，这个展开一段时间后需要自动吸附，注意状态的控制
+                playExtendAnim(this, getSnapDirection());
+            } else {// 非吸附状态
+                if (mCallback != null) {
+                    mCallback.onFloatClick();
+                }
             }
         } else {
-            // todo 恢复动画
             if (getX() < 0) {
+                float moveDistance = Math.abs(getX() + getWidth() * 3 / 4f);
+                playLeftSnapAnim(this, moveDistance);
                 if (mCallback != null) {
                     mCallback.onPlayLeftSnapAnim(this, getX(), -getWidth() * 3 / 4f);
                 }
                 return;
             }
             if (getX() > mScreenWidth - getWidth()) {
+                float moveDistance = Math.abs(mScreenWidth - getWidth() / 4f - getX());
+                playRightSnapAnim(this, moveDistance);
                 if (mCallback != null) {
                     mCallback.onPlayRightSnapAnim(this, getX(), mScreenWidth - getWidth() / 4f);
                 }
                 return;
             }
+            playMidAnim(this);
             if (mCallback != null) {
                 mCallback.onPlayMiddleAnim();
             }
         }
+    }
+
+    /**
+     * 是否处于吸附状态
+     */
+    private boolean isUnderSnap() {
+        Log.d("FloatView", "isUnderSnap()->" + mIsUnderSnap);
+        return mIsUnderSnap;
     }
 
     /**
@@ -238,7 +269,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     private boolean isNeedStayTop() {
-        if (isCoverStatusBar) { // 覆盖
+        if (mIsCoverStatusBar) { // 覆盖
             return getY() < topStayDistance;
         } else {
             return (getY() > mStatusBarHeight && getY() < topStayDistance + mStatusBarHeight);
@@ -253,14 +284,266 @@ public class BaseStayFloatContainer extends FrameLayout {
         this.mCallback = callback;
     }
 
+    //<editor-fold>动画效果处理
+    private ObjectAnimator rotateAnim;
+
+
+    /**
+     * 播放扩展动画
+     */
+    private void playExtendAnim(View targetView, @StayPosition int direction) {
+        if (direction == SNAP_LEFT) {
+            // 从左边往右扩展
+            playExtendAnimFromLeft(targetView);
+        } else if (direction == SNAP_RIGHT) {
+            // 从右边往左扩展
+            playExtendAnimFromRight(targetView);
+        } else {
+            // doNoting
+            if (mCallback != null) {
+                mCallback.onFloatClick();
+            }
+        }
+    }
+
+    private void playExtendAnimFromLeft(final View targetView) {
+        Log.d("FloatView", "playExtendAnimFromLeft()");
+        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
+                targetView.getTranslationX(), targetView.getTranslationX() + getWidth() * 3 / 4f);
+        extendFromLeftTranX.setInterpolator(new LinearInterpolator());
+        extendFromLeftTranX.setDuration(500);
+
+        checkRotateAnim(targetView);
+        AnimatorSet extendFromLeftSet = new AnimatorSet();
+        extendFromLeftSet.play(rotateAnim).after(extendFromLeftTranX);
+
+        extendFromLeftSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d("FloatView", "playExtendAnimFromLeft()->onAnimationStart()");
+                Log.d("FloatView", "playExtendAnimFromLeft()->mIsUnderSnap:改为false");
+                mIsUnderSnap = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d("FloatView", "playExtendAnimFromLeft()->onAnimationEnd()");
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        extendFromLeftSet.start();
+
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    playLeftSnapAnim(targetView, getWidth() * 3 / 4f);
+                }
+            }, 8000);
+        }
+    }
+
+    private void playExtendAnimFromRight(final View targetView) {
+        Log.d("FloatView", "playExtendAnimFromRight()");
+        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
+                targetView.getTranslationX(), targetView.getTranslationX() - getWidth() * 3 / 4f);
+        extendFromRightTranX.setInterpolator(new LinearInterpolator());
+        extendFromRightTranX.setDuration(500);
+
+        checkRotateAnim(targetView);
+        AnimatorSet extendFromRightSet = new AnimatorSet();
+        extendFromRightSet.play(rotateAnim).after(extendFromRightTranX);
+
+        extendFromRightSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d("FloatView", "playExtendAnimFromRight()->onAnimationStart()");
+                Log.d("FloatView", "playExtendAnimFromRight()->mIsUnderSnap:改为false");
+                mIsUnderSnap = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d("FloatView", "playExtendAnimFromRight()->onAnimationEnd()");
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        extendFromRightSet.start();
+
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    playRightSnapAnim(targetView, getWidth() * 3 / 4f);
+                }
+            }, 4000);
+        }
+    }
+
+    private @StayPosition
+    int getSnapDirection() {
+        Log.d("FloatView", "getSnapDirection()->getX():" + getX());
+        if (getX() < 0 && getX() >= -getWidth() * 3 / 4f) {
+            Log.d("FloatView", "getSnapDirection()->direction:left");
+            return SNAP_LEFT;
+        }
+        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - getWidth() / 4f) {
+            Log.d("FloatView", "getSnapDirection()->direction:right");
+            return SNAP_RIGHT;
+        }
+        Log.d("FloatView", "getSnapDirection()->direction:default");
+        return SNAP_DEFAULT;
+    }
+
+    /**
+     * 动画一开始，mIsUnderSnap就标记为true
+     */
+    private void playLeftSnapAnim(View targetView, float moveDistance) {
+        Log.d("FloatView", "playLeftSnapAnim()");
+        Log.d("FloatView", "playLeftSnapAnim()->getX():" + getX());
+        Log.d("FloatView", "translationX:" + targetView.getTranslationX());
+        Log.d("FloatView", "moveDistance:" + moveDistance);
+        // 因为currentX和maxLeftX一直会变，故用局部变量
+        ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
+                targetView.getTranslationX(), targetView.getTranslationX() - moveDistance);
+        translateLeftAnim.setInterpolator(new LinearInterpolator());
+        translateLeftAnim.setDuration(500);
+
+        checkRotateAnim(targetView);
+
+        AnimatorSet snapLeftSet = new AnimatorSet();
+        snapLeftSet.play(rotateAnim).after(translateLeftAnim);
+
+        snapLeftSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d("FloatView", "playLeftSnapAnim()->onAnimationStart()");
+                Log.d("FloatView", "playLeftSnapAnim()->mIsUnderSnap:改为true");
+                mIsUnderSnap = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d("FloatView", "playLeftSnapAnim()->onAnimationEnd()");
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        snapLeftSet.start();
+    }
+
+    /**
+     * 动画一开始，mIsUnderSnap就标记为true
+     */
+    private void playRightSnapAnim(View targetView, float moveDistance) {
+        Log.d("FloatView", "playRightSnapAnim()");
+        Log.d("FloatView", "translationX:" + targetView.getTranslationX());
+        Log.d("FloatView", "moveDistance:" + moveDistance);
+        // 因为currentX和maxRightX一直会变，故用局部变量
+        ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
+                targetView.getTranslationX(), targetView.getTranslationX() + moveDistance);
+        translateRightAnim.setInterpolator(new LinearInterpolator());
+        translateRightAnim.setDuration(500);
+
+        checkRotateAnim(targetView);
+
+        AnimatorSet snapRightSet = new AnimatorSet();
+        snapRightSet.play(rotateAnim).after(translateRightAnim);
+
+        snapRightSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d("FloatView", "playRightSnapAnim()->onAnimationStart()");
+                Log.d("FloatView", "playRightSnapAnim()->mIsUnderSnap:改为true");
+                mIsUnderSnap = true;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d("FloatView", "playRightSnapAnim()->onAnimationEnd()");
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        snapRightSet.start();
+    }
+
+    private void playMidAnim(View targetView) {
+        checkRotateAnim(targetView);
+        rotateAnim.start();
+    }
+
+    private void checkRotateAnim(View targetView) {
+        if (rotateAnim == null) {
+            rotateAnim = ObjectAnimator.ofFloat(targetView, View.ROTATION, 0, 360);
+            rotateAnim.setInterpolator(new LinearInterpolator());
+            rotateAnim.setRepeatCount(ValueAnimator.INFINITE);
+            rotateAnim.setDuration(2000);
+        }
+    }
+
+    private void playRotateAnim(View targetView) {
+        checkRotateAnim(targetView);
+        rotateAnim.start();
+    }
+
+    private void stopRotateAnim(View targetView) {
+        checkRotateAnim(targetView);
+        rotateAnim.pause();
+    }
+
+    //</editor-fold>
+
     public interface FloatCallback {
+
+        /**
+         * 悬浮窗按下回调
+         */
         void onFloatPress();
 
         /**
+         * 悬浮窗移动回调
          * never do too much create ops!!!
          */
         void onFloatMove();
 
+        /**
+         * 悬浮窗点击回调
+         */
         void onFloatClick();
 
         /**
@@ -285,6 +568,13 @@ public class BaseStayFloatContainer extends FrameLayout {
          * 正常动画
          */
         void onPlayMiddleAnim();
+    }
+
+    /**
+     * 动画接口
+     */
+    public interface FloatAnimCallback {
+
     }
 }
 
