@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import cn.rainmonth.basicdemo.ui.floatview.FloatViewDemoActivity;
 import cn.rainmonth.basicdemo.ui.material.ScrollingActivity;
 import cn.rainmonth.basicdemo.ui.material.TabbedActivity;
 import cn.rainmonth.basicdemo.ui.viewpager.ViewPagerDemoActivity;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
         TextView tvScroll = findViewById(R.id.tv_scroll);
         TextView tvTabbed = findViewById(R.id.tv_tabbed);
         TextView tvViewPager = findViewById(R.id.tv_view_pager);
+        TextView tvFloatView = findViewById(R.id.tv_float_view);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -57,6 +59,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 go(ViewPagerDemoActivity.class);
+            }
+        });
+
+        tvFloatView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                go(FloatViewDemoActivity.class);
             }
         });
     }
