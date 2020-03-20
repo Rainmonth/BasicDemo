@@ -176,15 +176,6 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 2、判断是否需要执行点击事件；
      */
     private void handleActionUp(MotionEvent event) {
-//        if (isNeedStayLeft()) {
-//            performStayToEdge(SNAP_LEFT);
-//        } else if (isNeedStayRight()) {
-//            performStayToEdge(SNAP_RIGHT);
-//        } else if (isNeedStayTop()) {
-//            performStayToEdge(SNAP_TOP);
-//        } else if (isNeedStayBottom()) {
-//            performStayToEdge(SNAP_BOTTOM);
-//        }
         mDeltaX = getX() - mOriginalX;
         mDeltaY = getY() - mOriginalY;
         Log.d(TAG, "handleActionUp()->mDeltaX:" + mDeltaX + ",mDeltaY:" + mDeltaY);
@@ -267,7 +258,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      */
     private boolean isNeedStayRight() {
         rightStayDistance = getWidth();
-        return getX() < mScreenWidth - rightStayDistance;
+        return getX() > mScreenWidth - rightStayDistance;
     }
 
     /**
