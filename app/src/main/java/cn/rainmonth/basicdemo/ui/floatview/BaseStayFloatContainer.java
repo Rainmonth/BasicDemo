@@ -22,6 +22,8 @@ import androidx.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import cn.rainmonth.basicdemo.R;
+
 /**
  * 支持吸附拖动的容器
  *
@@ -80,6 +82,8 @@ public class BaseStayFloatContainer extends FrameLayout {
         mScreenHeight = DpUtils.getScreenHeight(getContext());
         mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
         rightStayDistance = topStayDistance = bottomStayDistance = DEFAULT_STAY_DISTANCE;
+
+        View.inflate(getContext(), R.layout.view_float_container, this);
     }
 
     @Override

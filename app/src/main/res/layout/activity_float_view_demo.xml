@@ -34,10 +34,8 @@
 
     <cn.rainmonth.basicdemo.ui.floatview.BaseStayFloatContainer
         android:id="@+id/tv_show_float"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:background="@drawable/icon_user_login_default"
-        android:padding="16dp"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
         android:text="显示悬浮窗"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
