@@ -29,24 +29,27 @@ import java.lang.annotation.RetentionPolicy;
  * @date 2020/3/12 1:24 PM
  */
 public class BaseStayFloatContainer extends FrameLayout {
+    private static String TAG = "FloatView";
 
     private FloatCallback mCallback;                                // 悬浮回调
-    public static final int SNAP_DEFAULT = -1;                      // 默认
-    public static final int SNAP_TOP = 0;                           // 吸附在顶部
-    public static final int SNAP_BOTTOM = 1;                        // 吸附在底部
-    public static final int SNAP_LEFT = 2;                          // 吸附在左边
-    public static final int SNAP_RIGHT = 3;                         // 吸附在右边
+    public static final int POS_DEFAULT = -1;                      // 默认
+    public static final int POS_TOP = 0;                           // 吸附在顶部
+    public static final int POS_BOTTOM = 1;                        // 吸附在底部
+    public static final int POS_LEFT = 2;                          // 吸附在左边
+    public static final int POS_RIGHT = 3;                         // 吸附在右边
 
-    @IntDef({SNAP_DEFAULT, SNAP_TOP, SNAP_BOTTOM, SNAP_LEFT, SNAP_RIGHT})
+    @IntDef({POS_DEFAULT, POS_TOP, POS_BOTTOM, POS_LEFT, POS_RIGHT})
     @Retention(RetentionPolicy.SOURCE)
-    @interface StayPosition {                                           // 吸附的方向
+    @interface Position {                                           // 吸附的方向
 
     }
 
     public static final int DEFAULT_STAY_DISTANCE = 200;              // 默认的吸附助理
 
     private int leftStayDistance, rightStayDistance, topStayDistance, bottomStayDistance;
-    private static final int TOUCH_TIME_THRESHOLD_IN_MM = 150;      // 点击判断事件
+    private static final int TOUCH_TIME_THRESHOLD_IN_MM = 150;      // 点击判断时间间隔（单位：毫秒）
+    private static final int TOUCH_DISTANCE_THRESHOLD_IN_PX = 5;    // 点击判断位移间隔（单位：px）
+    private float mDeltaX, mDeltaY;                                 //
     private float mOriginalX, mOriginalY, mOriginalRawX, mOriginalRawY;
     private long mLastTouchDownTime;                                // 上次按下的时间
 
@@ -55,7 +58,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     private float mScreenWidth, mScreenHeight;
     private float mFloatInvisibleWidth;                             // 吸附状态下不可见的宽度
     private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
-    private boolean mIsUnderSnap = false;                           // 是否处于吸附状态
+    private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
     public BaseStayFloatContainer(@NonNull Context context) {
         this(context, null);
@@ -76,7 +79,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         mScreenWidth = DpUtils.getScreenWidth(getContext());
         mScreenHeight = DpUtils.getScreenHeight(getContext());
         mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
-        leftStayDistance = rightStayDistance = topStayDistance = bottomStayDistance = DEFAULT_STAY_DISTANCE;
+        rightStayDistance = topStayDistance = bottomStayDistance = DEFAULT_STAY_DISTANCE;
     }
 
     @Override
@@ -116,10 +119,11 @@ public class BaseStayFloatContainer extends FrameLayout {
         mOriginalRawY = event.getRawY();
         mLastTouchDownTime = System.currentTimeMillis();
 
-        stopRotateAnim(this);
+//        stopRotateAnim(this);
         if (mCallback != null) {
             mCallback.onFloatPress();
         }
+        Log.d(TAG, "handleActionDown()->mOriginalX:" + mOriginalX + ",mOriginalRawX:" + mOriginalRawX);
     }
 
     /**
@@ -172,47 +176,38 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 2、判断是否需要执行点击事件；
      */
     private void handleActionUp(MotionEvent event) {
-        if (isNeedStayLeft()) {
-            performStayToEdge(SNAP_LEFT);
-        } else if (isNeedStayRight()) {
-            performStayToEdge(SNAP_RIGHT);
-        } else if (isNeedStayTop()) {
-            performStayToEdge(SNAP_TOP);
-        } else if (isNeedStayBottom()) {
-            performStayToEdge(SNAP_BOTTOM);
-        }
+//        if (isNeedStayLeft()) {
+//            performStayToEdge(SNAP_LEFT);
+//        } else if (isNeedStayRight()) {
+//            performStayToEdge(SNAP_RIGHT);
+//        } else if (isNeedStayTop()) {
+//            performStayToEdge(SNAP_TOP);
+//        } else if (isNeedStayBottom()) {
+//            performStayToEdge(SNAP_BOTTOM);
+//        }
+        mDeltaX = getX() - mOriginalX;
+        mDeltaY = getY() - mOriginalY;
+        Log.d(TAG, "handleActionUp()->mDeltaX:" + mDeltaX + ",mDeltaY:" + mDeltaY);
         // doNoting
 
         // 优先点击处理，根据时间差判断是否要进行时间点击处理
         if (isNeedPerformClick()) {
-            if (isUnderSnap()) {// 吸附状态
-                // todo 展开，这个展开一段时间后需要自动吸附，注意状态的控制
-                playExtendAnim(this, getSnapDirection());
+            if (isUnderStay()) {// 吸附状态
+                // 展开，这个展开一段时间后需要自动吸附，注意状态的控制
+                playExtendAnim(this, getStayPosition());
             } else {// 非吸附状态
                 if (mCallback != null) {
                     mCallback.onFloatClick();
                 }
             }
         } else {
-            if (getX() < 0) {
-                float moveDistance = Math.abs(getX() + getWidth() * 3 / 4f);
-                playLeftSnapAnim(this, moveDistance);
+            if (isNeedStay()) {
+                playStayAnim(this, getStayPosition());
+            } else {
+                playMidAnim(this);
                 if (mCallback != null) {
-                    mCallback.onPlayLeftSnapAnim(this, getX(), -getWidth() * 3 / 4f);
+                    mCallback.onPlayMiddleAnim();
                 }
-                return;
-            }
-            if (getX() > mScreenWidth - getWidth()) {
-                float moveDistance = Math.abs(mScreenWidth - getWidth() / 4f - getX());
-                playRightSnapAnim(this, moveDistance);
-                if (mCallback != null) {
-                    mCallback.onPlayRightSnapAnim(this, getX(), mScreenWidth - getWidth() / 4f);
-                }
-                return;
-            }
-            playMidAnim(this);
-            if (mCallback != null) {
-                mCallback.onPlayMiddleAnim();
             }
         }
     }
@@ -220,54 +215,64 @@ public class BaseStayFloatContainer extends FrameLayout {
     /**
      * 是否处于吸附状态
      */
-    private boolean isUnderSnap() {
-        Log.d("FloatView", "isUnderSnap()->" + mIsUnderSnap);
-        return mIsUnderSnap;
+    private boolean isUnderStay() {
+        Log.d(TAG, "isUnderStay()->" + mIsUnderStay);
+        return mIsUnderStay;
     }
 
     /**
-     * 是否需要吸附效果
+     * 获取停留的位置（左边还是右边）
      */
-    public boolean isNeedStay() {
-        return isNeedStayLeft() || isNeedStayRight() || isNeedStayTop() || isNeedStayBottom();
-    }
-
-    /**
-     * 执行吸附到边缘
-     */
-    private void performStayToEdge(@StayPosition int stayPosition) {
-        switch (stayPosition) {
-            case SNAP_BOTTOM:
-                // todo 执行吸附到底部动画
-                break;
-            case SNAP_RIGHT:
-                // todo 执行吸附到右部动画
-                break;
-            case SNAP_TOP:
-                // todo 执行吸附到顶部动画
-                break;
-            case SNAP_LEFT:
-            default:
-                // todo 执行吸附到左部动画
-                break;
+    private @Position
+    int getStayPosition() {
+        Log.d(TAG, "getSnapDirection()->getX():" + getX());
+        if (getX() < 0 && getX() >= -getWidth() * 3 / 4f) {
+            Log.d(TAG, "getSnapDirection()->direction:left");
+            return POS_LEFT;
         }
+        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - getWidth() / 4f) {
+            Log.d(TAG, "getSnapDirection()->direction:right");
+            return POS_RIGHT;
+        }
+        Log.d(TAG, "getSnapDirection()->direction:default");
+        return POS_DEFAULT;
     }
 
     /**
      * 是否当做点击处理
      */
     private boolean isNeedPerformClick() {
-        return System.currentTimeMillis() - mLastTouchDownTime < TOUCH_TIME_THRESHOLD_IN_MM;
+        return (System.currentTimeMillis() - mLastTouchDownTime < TOUCH_TIME_THRESHOLD_IN_MM)
+                && Math.abs(mDeltaX) <= TOUCH_DISTANCE_THRESHOLD_IN_PX
+                && Math.abs(mDeltaY) <= TOUCH_DISTANCE_THRESHOLD_IN_PX;
     }
 
+    /**
+     * 是否需要吸附效果
+     */
+    public boolean isNeedStay() {
+        return isNeedStayLeft() || isNeedStayRight() /*|| isNeedStayTop() || isNeedStayBottom()*/;
+    }
+
+    /**
+     * 是否需要靠左停留
+     */
     private boolean isNeedStayLeft() {
+        leftStayDistance = 0;
         return getX() < leftStayDistance;
     }
 
+    /**
+     * 是否需要靠右停留
+     */
     private boolean isNeedStayRight() {
+        rightStayDistance = getWidth();
         return getX() < mScreenWidth - rightStayDistance;
     }
 
+    /**
+     * 是否需要靠顶停留
+     */
     private boolean isNeedStayTop() {
         if (mIsCoverStatusBar) { // 覆盖
             return getY() < topStayDistance;
@@ -276,6 +281,9 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
+    /**
+     * 是否需要靠底停留
+     */
     private boolean isNeedStayBottom() {
         return getY() < mScreenHeight - bottomStayDistance;
     }
@@ -286,16 +294,31 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     //<editor-fold>动画效果处理
     private ObjectAnimator rotateAnim;
-
+    /**
+     * 封面旋转动画时长
+     */
+    private long rotateAnimTimeInMillis = 2000;
+    /**
+     * 水平扩展动画时长
+     */
+    private long extendTranslateTimeInMillis = 500;
+    /**
+     * 水平扩展动画播放完成后再播放停留动画的时间间隔
+     */
+    private long extendBackDelayTimeInMillis = 4000;
+    /**
+     * 停留动画的时长
+     */
+    private long stayTranslateTimeInMillis = 500;
 
     /**
      * 播放扩展动画
      */
-    private void playExtendAnim(View targetView, @StayPosition int direction) {
-        if (direction == SNAP_LEFT) {
+    private void playExtendAnim(View targetView, @Position int direction) {
+        if (direction == POS_LEFT) {
             // 从左边往右扩展
             playExtendAnimFromLeft(targetView);
-        } else if (direction == SNAP_RIGHT) {
+        } else if (direction == POS_RIGHT) {
             // 从右边往左扩展
             playExtendAnimFromRight(targetView);
         } else {
@@ -307,11 +330,11 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     private void playExtendAnimFromLeft(final View targetView) {
-        Log.d("FloatView", "playExtendAnimFromLeft()");
+        Log.d(TAG, "playExtendAnimFromLeft()");
         ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
                 targetView.getTranslationX(), targetView.getTranslationX() + getWidth() * 3 / 4f);
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
-        extendFromLeftTranX.setDuration(500);
+        extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
         checkRotateAnim(targetView);
         AnimatorSet extendFromLeftSet = new AnimatorSet();
@@ -320,14 +343,14 @@ public class BaseStayFloatContainer extends FrameLayout {
         extendFromLeftSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d("FloatView", "playExtendAnimFromLeft()->onAnimationStart()");
-                Log.d("FloatView", "playExtendAnimFromLeft()->mIsUnderSnap:改为false");
-                mIsUnderSnap = false;
+                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationStart()");
+                Log.d(TAG, "playExtendAnimFromLeft()->mIsUnderStay:改为false");
+                mIsUnderStay = false;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                Log.d("FloatView", "playExtendAnimFromLeft()->onAnimationEnd()");
+                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationEnd()");
             }
 
             @Override
@@ -346,18 +369,24 @@ public class BaseStayFloatContainer extends FrameLayout {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    playLeftSnapAnim(targetView, getWidth() * 3 / 4f);
+                    // 判断是否需要进行回弹动画
+                    if (isNeedStayBackToLeft()) {
+                        Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
+                        playStayAnimToLeft(targetView, getWidth() * 3 / 4f, true);
+                    } else {
+                        Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
+                    }
                 }
-            }, 8000);
+            }, extendBackDelayTimeInMillis);
         }
     }
 
     private void playExtendAnimFromRight(final View targetView) {
-        Log.d("FloatView", "playExtendAnimFromRight()");
+        Log.d(TAG, "playExtendAnimFromRight()");
         ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
                 targetView.getTranslationX(), targetView.getTranslationX() - getWidth() * 3 / 4f);
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
-        extendFromRightTranX.setDuration(500);
+        extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
         checkRotateAnim(targetView);
         AnimatorSet extendFromRightSet = new AnimatorSet();
@@ -366,14 +395,14 @@ public class BaseStayFloatContainer extends FrameLayout {
         extendFromRightSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d("FloatView", "playExtendAnimFromRight()->onAnimationStart()");
-                Log.d("FloatView", "playExtendAnimFromRight()->mIsUnderSnap:改为false");
-                mIsUnderSnap = false;
+                Log.d(TAG, "playExtendAnimFromRight()->onAnimationStart()");
+                Log.d(TAG, "playExtendAnimFromRight()->mIsUnderStay:改为false");
+                mIsUnderStay = false;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                Log.d("FloatView", "playExtendAnimFromRight()->onAnimationEnd()");
+                Log.d(TAG, "playExtendAnimFromRight()->onAnimationEnd()");
             }
 
             @Override
@@ -392,40 +421,65 @@ public class BaseStayFloatContainer extends FrameLayout {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    playRightSnapAnim(targetView, getWidth() * 3 / 4f);
+                    // 判断是否需要进行回弹动画
+                    if (isNeedStayBackToRight()) {
+                        Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
+                        playStayAnimToRight(targetView, getWidth() * 3 / 4f, true);
+                    } else {
+                        Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
+                    }
                 }
-            }, 4000);
+            }, extendBackDelayTimeInMillis);
         }
     }
 
-    private @StayPosition
-    int getSnapDirection() {
-        Log.d("FloatView", "getSnapDirection()->getX():" + getX());
-        if (getX() < 0 && getX() >= -getWidth() * 3 / 4f) {
-            Log.d("FloatView", "getSnapDirection()->direction:left");
-            return SNAP_LEFT;
+    private boolean isNeedStayBackToLeft() {
+        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",getWidth()/4f=" + getWidth() / 4f + ",isNeedStayBackToLeft:" + (mOriginalRawX <= getWidth() / 4f));
+        return mOriginalRawX <= getWidth() / 4f;
+    }
+
+    private boolean isNeedStayBackToRight() {
+        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",(mScreenWidth-getWidth()/4f)=" + (mScreenWidth - getWidth() / 4f) + ",isNeedStayBackToRight:" + (mOriginalRawX >= mScreenWidth - getWidth() / 4f));
+        return mOriginalRawX >= mScreenWidth - getWidth() / 4f;
+    }
+
+    private void playStayAnim(View targetView, @Position int stayPosition) {
+        float moveDistance = getSnapMoveDistance(stayPosition);
+        if (stayPosition == POS_LEFT) {
+            playStayAnimToLeft(targetView, moveDistance, false);
+        } else if (stayPosition == POS_RIGHT) {
+            playStayAnimToRight(targetView, moveDistance, false);
         }
-        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - getWidth() / 4f) {
-            Log.d("FloatView", "getSnapDirection()->direction:right");
-            return SNAP_RIGHT;
+    }
+
+    private float getSnapMoveDistance(@Position int stayPosition) {
+        if (stayPosition == POS_LEFT) {
+            return Math.abs(getX() + getWidth() * 3 / 4f);
+        } else if (stayPosition == POS_RIGHT) {
+            return Math.abs(mScreenWidth - getWidth() / 4f - getX());
+        } else {
+            return 0;
         }
-        Log.d("FloatView", "getSnapDirection()->direction:default");
-        return SNAP_DEFAULT;
     }
 
     /**
-     * 动画一开始，mIsUnderSnap就标记为true
+     * 播放停留在左侧动画
+     * 动画一开始，mIsUnderStay就标记为true
+     *
+     * @param targetView       动画View
+     * @param moveDistance     移动距离
+     * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playLeftSnapAnim(View targetView, float moveDistance) {
-        Log.d("FloatView", "playLeftSnapAnim()");
-        Log.d("FloatView", "playLeftSnapAnim()->getX():" + getX());
-        Log.d("FloatView", "translationX:" + targetView.getTranslationX());
-        Log.d("FloatView", "moveDistance:" + moveDistance);
+    private void playStayAnimToLeft(View targetView, float moveDistance, boolean isPlayFromExtend) {
+        Log.d(TAG, "playStayAnimToLeft()");
+        Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
+        Log.d(TAG, "playStayAnimToLeft()->translationX:" + targetView.getTranslationX());
+        Log.d(TAG, "playStayAnimToLeft()->moveDistance:" + moveDistance);
         // 因为currentX和maxLeftX一直会变，故用局部变量
         ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
                 targetView.getTranslationX(), targetView.getTranslationX() - moveDistance);
         translateLeftAnim.setInterpolator(new LinearInterpolator());
-        translateLeftAnim.setDuration(500);
+        translateLeftAnim.setDuration(stayTranslateTimeInMillis);
 
         checkRotateAnim(targetView);
 
@@ -435,14 +489,14 @@ public class BaseStayFloatContainer extends FrameLayout {
         snapLeftSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d("FloatView", "playLeftSnapAnim()->onAnimationStart()");
-                Log.d("FloatView", "playLeftSnapAnim()->mIsUnderSnap:改为true");
-                mIsUnderSnap = true;
+                Log.d(TAG, "playStayAnimToLeft()->onAnimationStart()");
+                Log.d(TAG, "playStayAnimToLeft()->mIsUnderStay:改为true");
+                mIsUnderStay = true;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                Log.d("FloatView", "playLeftSnapAnim()->onAnimationEnd()");
+                Log.d(TAG, "playStayAnimToLeft()->onAnimationEnd()");
             }
 
             @Override
@@ -459,17 +513,22 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     /**
-     * 动画一开始，mIsUnderSnap就标记为true
+     * 播放停留在右侧东话
+     * 动画一开始，mIsUnderStay就标记为true
+     *
+     * @param targetView       动画View
+     * @param moveDistance     移动距离
+     * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playRightSnapAnim(View targetView, float moveDistance) {
-        Log.d("FloatView", "playRightSnapAnim()");
-        Log.d("FloatView", "translationX:" + targetView.getTranslationX());
-        Log.d("FloatView", "moveDistance:" + moveDistance);
+    private void playStayAnimToRight(View targetView, float moveDistance, boolean isPlayFromExtend) {
+        Log.d(TAG, "playStayAnimToRight()");
+        Log.d(TAG, "playStayAnimToRight()->translationX:" + targetView.getTranslationX());
+        Log.d(TAG, "playStayAnimToRight()->moveDistance:" + moveDistance);
         // 因为currentX和maxRightX一直会变，故用局部变量
         ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
                 targetView.getTranslationX(), targetView.getTranslationX() + moveDistance);
         translateRightAnim.setInterpolator(new LinearInterpolator());
-        translateRightAnim.setDuration(500);
+        translateRightAnim.setDuration(stayTranslateTimeInMillis);
 
         checkRotateAnim(targetView);
 
@@ -479,14 +538,14 @@ public class BaseStayFloatContainer extends FrameLayout {
         snapRightSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d("FloatView", "playRightSnapAnim()->onAnimationStart()");
-                Log.d("FloatView", "playRightSnapAnim()->mIsUnderSnap:改为true");
-                mIsUnderSnap = true;
+                Log.d(TAG, "playStayAnimToRight()->onAnimationStart()");
+                Log.d(TAG, "playStayAnimToRight()->mIsUnderStay:改为true");
+                mIsUnderStay = true;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                Log.d("FloatView", "playRightSnapAnim()->onAnimationEnd()");
+                Log.d(TAG, "playStayAnimToRight()->onAnimationEnd()");
             }
 
             @Override
@@ -512,7 +571,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             rotateAnim = ObjectAnimator.ofFloat(targetView, View.ROTATION, 0, 360);
             rotateAnim.setInterpolator(new LinearInterpolator());
             rotateAnim.setRepeatCount(ValueAnimator.INFINITE);
-            rotateAnim.setDuration(2000);
+            rotateAnim.setDuration(rotateAnimTimeInMillis);
         }
     }
 
@@ -553,7 +612,7 @@ public class BaseStayFloatContainer extends FrameLayout {
          * @param currentX   当前的x坐标
          * @param maxLeftX   最左边的位置
          */
-        void onPlayLeftSnapAnim(View targetView, float currentX, float maxLeftX);
+        void onPlaySnapAnimToLeft(View targetView, float currentX, float maxLeftX);
 
         /**
          * 右边吸附动画
@@ -562,7 +621,7 @@ public class BaseStayFloatContainer extends FrameLayout {
          * @param currentX   当前的x坐标
          * @param maxRightX  最右边的位置
          */
-        void onPlayRightSnapAnim(View targetView, float currentX, float maxRightX);
+        void onPlaySnapAnimToRight(View targetView, float currentX, float maxRightX);
 
         /**
          * 正常动画

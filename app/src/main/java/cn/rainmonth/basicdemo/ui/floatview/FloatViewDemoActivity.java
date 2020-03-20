@@ -21,7 +21,6 @@ public class FloatViewDemoActivity extends AppCompatActivity implements BaseStay
         tvInfo = findViewById(R.id.tv_info);
         floatContainer = findViewById(R.id.tv_show_float);
         TextView tvHideFloat = findViewById(R.id.tv_hide_float);
-        onFloatMove();
         floatContainer.setCallback(this);
 
         tvHideFloat.setOnClickListener(new View.OnClickListener() {
@@ -39,7 +38,7 @@ public class FloatViewDemoActivity extends AppCompatActivity implements BaseStay
 
     @Override
     public void onFloatMove() {
-        tvInfo.setText(String.format("x:%s\ny:%s\ntranslationX:%s", floatContainer.getX(), floatContainer.getY(), floatContainer.getTranslationX()));
+        tvInfo.setText(String.format("getX():%s\ngetY():%s\ntranslationX:%s", floatContainer.getX(), floatContainer.getY(), floatContainer.getTranslationX()));
     }
 
     @Override
@@ -48,12 +47,12 @@ public class FloatViewDemoActivity extends AppCompatActivity implements BaseStay
     }
 
     @Override
-    public void onPlayLeftSnapAnim(View targetView, float currentX, float maxLeftX) {
+    public void onPlaySnapAnimToLeft(View targetView, float currentX, float maxLeftX) {
         toast("播放向左吸附动画");
     }
 
     @Override
-    public void onPlayRightSnapAnim(View targetView, float currentX, float maxRightX) {
+    public void onPlaySnapAnimToRight(View targetView, float currentX, float maxRightX) {
         toast("播放向右吸附动画");
     }
 
