@@ -14,6 +14,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -62,6 +63,11 @@ public class BaseStayFloatContainer extends FrameLayout {
     private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
+    private ImageView ivCover;
+    private ImageView ivStayLeftBody, ivStayRightBody;
+    private ImageView ivStayLeftArm, ivStayRightArm;
+    private ImageView ivMusicMark;
+
     public BaseStayFloatContainer(@NonNull Context context) {
         this(context, null);
     }
@@ -84,6 +90,13 @@ public class BaseStayFloatContainer extends FrameLayout {
         rightStayDistance = topStayDistance = bottomStayDistance = DEFAULT_STAY_DISTANCE;
 
         View.inflate(getContext(), R.layout.view_float_container, this);
+
+        ivCover = findViewById(R.id.float_view_iv_cover);
+        ivStayLeftBody = findViewById(R.id.float_view_iv_stay_left_body);
+        ivStayLeftArm = findViewById(R.id.float_view_iv_stay_left_arm);
+        ivStayRightBody = findViewById(R.id.float_view_iv_stay_right_body);
+        ivStayRightArm = findViewById(R.id.float_view_iv_right_arm);
+        ivMusicMark = findViewById(R.id.float_view_iv_music_mark);
     }
 
     @Override
@@ -199,7 +212,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             if (isNeedStay()) {
                 playStayAnim(this, getStayPosition());
             } else {
-                playMidAnim(this);
+                playMidAnim(ivCover);
                 if (mCallback != null) {
                     mCallback.onPlayMiddleAnim();
                 }
@@ -557,8 +570,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     private void playMidAnim(View targetView) {
-        checkRotateAnim(targetView);
-        rotateAnim.start();
+        playRotateAnim(targetView);
     }
 
     private void checkRotateAnim(View targetView) {
