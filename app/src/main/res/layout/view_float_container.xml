@@ -27,6 +27,7 @@
         android:layout_width="31dp"
         android:layout_height="74dp"
         android:src="@drawable/float_view_icon_stay_left_kada_body"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -35,6 +36,7 @@
         android:layout_width="31dp"
         android:layout_height="74dp"
         android:src="@drawable/float_view_icon_stay_right_kada_body"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -83,11 +85,20 @@
         app:layout_constraintTop_toTopOf="@+id/float_view_iv_stay_right_body" />
 
     <ImageView
-        android:id="@+id/float_view_iv_music_mark"
+        android:id="@+id/float_view_iv_music_mark1"
         android:layout_width="7dp"
         android:layout_height="10.5dp"
-        android:layout_marginEnd="10dp"
         android:src="@drawable/float_view_icon_music_mark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_music_mark2"
+        android:layout_width="7dp"
+        android:layout_height="10.5dp"
+        android:src="@drawable/float_view_icon_music_mark"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover" />
 

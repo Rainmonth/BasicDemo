@@ -68,7 +68,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     private Group groupStayLeft, groupStayRight;
     private ImageView ivStayLeftBody, ivStayLeftArm;
     private ImageView ivStayRightBody, ivStayRightArm;
-    private ImageView ivMusicMark;
+    private ImageView ivMusicMark1, ivMusicMark2;
 
     public BaseStayFloatContainer(@NonNull Context context) {
         this(context, null);
@@ -102,13 +102,14 @@ public class BaseStayFloatContainer extends FrameLayout {
         groupStayRight = findViewById(R.id.grout_stay_right);
         ivStayRightBody = findViewById(R.id.float_view_iv_stay_right_body);
         ivStayRightArm = findViewById(R.id.float_view_iv_stay_right_arm);
-        ivMusicMark = findViewById(R.id.float_view_iv_music_mark);
+        ivMusicMark1 = findViewById(R.id.float_view_iv_music_mark1);
+        ivMusicMark2 = findViewById(R.id.float_view_iv_music_mark2);
     }
 
     @Override
     public void dispatchConfigurationChanged(Configuration newConfig) {
         super.dispatchConfigurationChanged(newConfig);
-        // todo
+        // todo 使用屏幕旋转的变化
     }
 
     @Override
@@ -135,7 +136,6 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 主要记录down时的位置信息即时间
      */
     private void handleActionDown(MotionEvent event) {
-        // todo 暂停动画
         mOriginalX = getX();
         mOriginalY = getY();
         mOriginalRawX = event.getRawX();
@@ -216,7 +216,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         } else {
             if (isNeedStay()) {
-                playStayAnim(this, ivCover, getStayPosition());
+                playStayAnim(this, getStayPosition());
             } else {
                 playNormalAnim();
                 if (mCallback != null) {
@@ -308,7 +308,7 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     //<editor-fold>动画效果处理
     private ObjectAnimator coverRotateAnim;
-    private AnimatorSet musicMarkAnimSet;
+    private AnimatorSet musicMarkAnimSet1, musicMarkAnimSet2;
     /**
      * 封面旋转动画时长
      */
@@ -407,7 +407,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
-                        playStayAnimToLeft(extendTargetView, ivCover, getWidth() - mVisibleWidth, true);
+                        playStayAnimToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
                     }
@@ -468,7 +468,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
-                        playStayAnimToRight(extendTargetView, rotateTargetView, getWidth() - mVisibleWidth, true);
+                        playStayAnimToRight(extendTargetView, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
                     }
@@ -488,24 +488,23 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     /**
-     * @param stayTargetView   停留动画目标View
-     * @param rotateTargetView 旋转动画目标View
-     * @param stayPosition     停留的位置
+     * @param stayTargetView 停留动画目标View
+     * @param stayPosition   停留的位置
      */
-    private void playStayAnim(View stayTargetView, View rotateTargetView, @Position int stayPosition) {
+    private void playStayAnim(View stayTargetView, @Position int stayPosition) {
         float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
-            playStayAnimToLeft(stayTargetView, rotateTargetView, moveDistance, false);
+            playStayAnimToLeft(stayTargetView, moveDistance, false);
         } else if (stayPosition == POS_RIGHT) {
-            playStayAnimToRight(stayTargetView, rotateTargetView, moveDistance, false);
+            playStayAnimToRight(stayTargetView, moveDistance, false);
         }
     }
 
     /**
      * 获取移动的距离
      *
-     * @param stayPosition
-     * @return
+     * @param stayPosition 停留的位置{@link Position#POS_LEFT},{@link Position#POS_RIGHT},etc
+     * @return 移动的距离
      */
     private float getStayMoveDistance(@Position int stayPosition) {
         if (stayPosition == POS_LEFT) {
@@ -518,15 +517,14 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     /**
-     * 播放停留在左侧动画
+     * 播放停留到左侧动画
      * 动画一开始，mIsUnderStay就标记为true
      *
      * @param stayTargetView   停留动画目标View
-     * @param rotateTargetView 旋转动画目标View
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToLeft(View stayTargetView, View rotateTargetView, float moveDistance, boolean isPlayFromExtend) {
+    private void playStayAnimToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToLeft()");
         Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
         Log.d(TAG, "playStayAnimToLeft()->translationX:" + stayTargetView.getTranslationX());
@@ -536,13 +534,12 @@ public class BaseStayFloatContainer extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - moveDistance);
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.setDuration(stayTranslateTimeInMillis);
-        // todo
-        groupStayLeft.setVisibility(VISIBLE);
-        checkCoverRotateAnim();
-        checkMusicMarkAnimSet(true);
+//        checkCoverRotateAnim();
+//        checkMusicMarkAnimSet(true);
 
         AnimatorSet snapLeftSet = new AnimatorSet();
-        snapLeftSet.play(coverRotateAnim).with(musicMarkAnimSet).after(translateLeftAnim);
+//        snapLeftSet.play(coverRotateAnim).with(musicMarkAnimSet1).after(translateLeftAnim);
+        snapLeftSet.play(translateLeftAnim);
 
 
         snapLeftSet.addListener(new Animator.AnimatorListener() {
@@ -569,6 +566,14 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         });
         snapLeftSet.start();
+        // 这里采用handler来延时而不是采用startDelayTime主要是因为，前者可保证目标在开始的动画的时候才显示
+        getHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                playStayLeftKadaAnim();
+            }
+        }, stayTranslateTimeInMillis);
+
     }
 
     /**
@@ -576,11 +581,10 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 动画一开始，mIsUnderStay就标记为true
      *
      * @param stayTargetView   停留动画目标View
-     * @param rotateTargetView 旋转动画目标View
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToRight(View stayTargetView, View rotateTargetView, float moveDistance, boolean isPlayFromExtend) {
+    private void playStayAnimToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToRight()");
         Log.d(TAG, "playStayAnimToRight()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToRight()->moveDistance:" + moveDistance);
@@ -589,14 +593,13 @@ public class BaseStayFloatContainer extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + moveDistance);
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.setDuration(stayTranslateTimeInMillis);
-        // todo
-        groupStayRight.setVisibility(VISIBLE);
 
-        checkCoverRotateAnim();
-        checkMusicMarkAnimSet(true);
+//        checkCoverRotateAnim();
+//        checkMusicMarkAnimSet(true);
 
         AnimatorSet snapRightSet = new AnimatorSet();
-        snapRightSet.play(coverRotateAnim).with(musicMarkAnimSet).after(translateRightAnim);
+//        snapRightSet.play(coverRotateAnim).with(musicMarkAnimSet1).after(translateRightAnim);
+        snapRightSet.play(translateRightAnim);
 
         snapRightSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -622,6 +625,13 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         });
         snapRightSet.start();
+        getHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                playStayRightKadaAnim();
+            }
+        }, stayTranslateTimeInMillis);
+
     }
 
     /**
@@ -638,8 +648,115 @@ public class BaseStayFloatContainer extends FrameLayout {
         playMusicMarkAnim();
     }
 
-    private void playKadaAnim() {
+    /**
+     * 从-getWidth到
+     */
+    private void playStayKadaAnim() {
+        ObjectAnimator kadaTranslateY = ObjectAnimator.ofFloat(groupStayLeft, View.TRANSLATION_X, -ivStayLeftBody.getTranslationX(), 0);
+        kadaTranslateY.setDuration(500);
+        kadaTranslateY.setStartDelay(500);
+        kadaTranslateY.start();
+    }
 
+    /**
+     * body的宽度
+     */
+    int mBodyWidth = DpUtils.dp2px(getContext(), 31);
+    /**
+     * arm的宽度
+     */
+    int mArmWidth = DpUtils.dp2px(getContext(), 19);
+
+    private void playStayLeftKadaAnim() {
+        Log.d(TAG, "playStayLeftKadaAnim()");
+        // 身体显示位移动画
+        ObjectAnimator kadaStayLeftBodyTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
+                ivStayLeftBody.getTranslationX() - mBodyWidth, ivStayLeftBody.getTranslationX());
+        // 手臂显示位移动画
+        ObjectAnimator kadaStayLeftArmTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
+                ivStayLeftArm.getTranslationX() - mArmWidth, ivStayLeftArm.getTranslationX());
+
+        // 手臂摆动旋转动画
+        ivStayLeftArm.setPivotX(mArmWidth / 2f);
+        ivStayLeftArm.setPivotY(0);
+        ObjectAnimator kadaStayLeftArmRotate = ObjectAnimator.ofFloat(ivStayLeftArm, View.ROTATION, 0, -45, 0, 15, 0);
+        kadaStayLeftArmRotate.setDuration(500);
+        kadaStayLeftArmRotate.setStartDelay(500);
+        kadaStayLeftArmRotate.setRepeatCount(2);
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setDuration(500);
+        animatorSet.play(kadaStayLeftBodyTranslateX).with(kadaStayLeftArmTranslateX).before(kadaStayLeftArmRotate);
+        animatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                if (groupStayLeft.getVisibility() != VISIBLE) {
+                    groupStayLeft.setVisibility(VISIBLE);
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        animatorSet.start();
+    }
+
+    private void playStayRightKadaAnim() {
+        Log.d(TAG, "playStayRightKadaAnim()");
+        // 身体显示位移动画
+        ObjectAnimator kadaStayRightBodyTranslateX = ObjectAnimator.ofFloat(ivStayRightBody, View.TRANSLATION_X,
+                ivStayRightBody.getTranslationX() + mArmWidth, ivStayRightBody.getTranslationX());
+        // 手臂显示位移动画
+        ObjectAnimator kadaStayRightArmTranslateX = ObjectAnimator.ofFloat(ivStayRightArm, View.TRANSLATION_X,
+                ivStayRightArm.getTranslationX() + mArmWidth, ivStayRightArm.getTranslationX());
+
+        // 手臂摆动旋转动画
+        ivStayRightArm.setPivotX(mArmWidth / 2f);
+        ivStayRightArm.setPivotY(0);
+        ObjectAnimator kadaStayRightArmRotate = ObjectAnimator.ofFloat(ivStayRightArm, View.ROTATION, 0, 45, 0, -15, 0);
+        kadaStayRightArmRotate.setDuration(500);
+        kadaStayRightArmRotate.setStartDelay(500);
+        kadaStayRightArmRotate.setRepeatCount(2);
+
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setDuration(500);
+        animatorSet.play(kadaStayRightBodyTranslateX).with(kadaStayRightArmTranslateX).before(kadaStayRightArmRotate);
+        animatorSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                if (groupStayRight.getVisibility() != VISIBLE) {
+                    groupStayRight.setVisibility(VISIBLE);
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        animatorSet.start();
     }
 
     private void checkCoverRotateAnim() {
@@ -654,28 +771,34 @@ public class BaseStayFloatContainer extends FrameLayout {
     /**
      * 检查音符动画集合
      * 这个动画应该需要区分当前所在屏幕的位置的
-     *
-     * @param isCheckForPlay 是不是播放前的检查
      */
-    private void checkMusicMarkAnimSet(boolean isCheckForPlay) {
-        ivMusicMark.setVisibility(isCheckForPlay ? VISIBLE : GONE);
-        if (musicMarkAnimSet == null) {
-            ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_X, 0, 1);
-            ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_Y, 0, 1);
-            ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_X, 0, DpUtils.dp2px(getContext(), (10 + 18)));
-            ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_Y, 0, -DpUtils.dp2px(getContext(), 48));
+    private void checkMusicMarkAnimSet() {
+        if (musicMarkAnimSet1 == null) {
+            musicMarkAnimSet1 = initMusicMarkAnimSet(ivMusicMark1);
+        }
+        if (musicMarkAnimSet2 == null) {
+            musicMarkAnimSet2 = initMusicMarkAnimSet(ivMusicMark2);
+        }
+    }
+
+    private AnimatorSet initMusicMarkAnimSet(View musicMartView) {
+        ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_X, 0, 1.5f);
+        ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_Y, 0, 1.5f);
+        ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_X, 0, DpUtils.dp2px(getContext(), 18));
+        ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_Y, 0, -DpUtils.dp2px(getContext(), 48));
 //            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
 //            ivMusicMark.setPivotX(0);
 //            ivMusicMark.setPivotY(getHeight());
-            scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
-            scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
-            translateXAnim.setRepeatCount(ValueAnimator.INFINITE);
-            translateYAnim.setRepeatCount(ValueAnimator.INFINITE);
+        scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
+        scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
+        translateXAnim.setRepeatCount(ValueAnimator.INFINITE);
+        translateYAnim.setRepeatCount(ValueAnimator.INFINITE);
 //            alphaAnim.setRepeatCount(ValueAnimator.INFINITE);
-            musicMarkAnimSet = new AnimatorSet();
-            musicMarkAnimSet.playTogether(scaleXAnim, scaleYAnim, translateXAnim, translateYAnim/*, alphaAnim*/);
-            musicMarkAnimSet.setDuration(musicMarkAnimTimeInMIlls);
-        }
+        AnimatorSet musicMarkAnimSet = new AnimatorSet();
+        musicMarkAnimSet.playTogether(scaleXAnim, scaleYAnim, translateXAnim, translateYAnim/*, alphaAnim*/);
+        musicMarkAnimSet.setDuration(musicMarkAnimTimeInMIlls);
+
+        return musicMarkAnimSet;
     }
 
     private void playCoverRotateAnim() {
@@ -690,13 +813,29 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 3、alpha动画
      */
     private void playMusicMarkAnim() {
-        checkMusicMarkAnimSet(true);
-        musicMarkAnimSet.start();
+        checkMusicMarkAnimSet();
+        if (ivMusicMark1.getVisibility() != VISIBLE) {
+            ivMusicMark1.setVisibility(VISIBLE);
+        }
+        musicMarkAnimSet1.start();
+        getHandler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (ivMusicMark2.getVisibility() != VISIBLE) {
+                    ivMusicMark2.setVisibility(VISIBLE);
+                }
+                musicMarkAnimSet2.start();
+            }
+        }, 1000);
+
     }
 
     private void pauseMusicMarkAnim() {
-        checkMusicMarkAnimSet(false);
-        musicMarkAnimSet.pause();
+        checkMusicMarkAnimSet();
+        ivMusicMark1.setVisibility(GONE);
+        ivMusicMark2.setVisibility(GONE);
+        musicMarkAnimSet1.pause();
+        musicMarkAnimSet2.pause();
     }
 
     private void pauseCoverRotateAnim() {
@@ -734,8 +873,10 @@ public class BaseStayFloatContainer extends FrameLayout {
         if (ivPlay.getVisibility() != GONE) {
             ivPlay.setVisibility(GONE);
         }
+        playCoverRotateAnim();
+        playMusicMarkAnim();
         if (isNeedStay()) {
-            playStayAnim(this, ivCover, getStayPosition());
+            playStayAnim(this, getStayPosition());
         } else {
             playNormalAnim();
         }
@@ -763,9 +904,13 @@ public class BaseStayFloatContainer extends FrameLayout {
             coverRotateAnim.removeAllUpdateListeners();
             coverRotateAnim = null;
         }
-        if (musicMarkAnimSet != null) {
-            musicMarkAnimSet.removeAllListeners();
-            musicMarkAnimSet = null;
+        if (musicMarkAnimSet1 != null) {
+            musicMarkAnimSet1.removeAllListeners();
+            musicMarkAnimSet1 = null;
+        }
+        if (musicMarkAnimSet2 != null) {
+            musicMarkAnimSet2.removeAllListeners();
+            musicMarkAnimSet2 = null;
         }
     }
 
@@ -818,5 +963,3 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     }
 }
-
-
