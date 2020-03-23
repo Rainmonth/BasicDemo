@@ -18,6 +18,16 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:visibility="visible" />
 
+    <ImageView
+        android:id="@+id/float_view_iv_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/float_view_icon_play"
+        app:layout_constraintBottom_toBottomOf="@+id/float_view_iv_cover"
+        app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover"
+        app:layout_constraintStart_toStartOf="@+id/float_view_iv_cover"
+        app:layout_constraintTop_toTopOf="@+id/float_view_iv_cover" />
+
     <androidx.constraintlayout.widget.Group
         android:id="@+id/grout_stay_left"
         android:layout_width="wrap_content"
@@ -50,7 +60,7 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:constraint_referenced_ids="float_view_iv_stay_right_body,float_view_iv_stay_right_arm "
-        tools:visibility="visible" />
+        tools:visibility="gone" />
 
     <ImageView
         android:id="@+id/float_view_iv_stay_right_body"
@@ -74,9 +84,9 @@
         android:id="@+id/float_view_iv_music_mark"
         android:layout_width="28dp"
         android:layout_height="42dp"
+        android:layout_marginEnd="30dp"
         android:src="@drawable/float_view_icon_music_mark"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

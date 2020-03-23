@@ -64,7 +64,8 @@ public class BaseStayFloatContainer extends FrameLayout {
     private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
-    private ImageView ivCover;
+    private ImageView ivCover;                                      // 封面图
+    private ImageView ivPlay;                                       // 暂停播放时的播放按钮
     private Group groupStayLeft, groupStayRight;
     private ImageView ivStayLeftBody, ivStayLeftArm;
     private ImageView ivStayRightBody, ivStayRightArm;
@@ -94,6 +95,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         View.inflate(getContext(), R.layout.view_float_container, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
+        ivPlay = findViewById(R.id.float_view_iv_play);
         groupStayLeft = findViewById(R.id.grout_stay_left);
         ivStayLeftBody = findViewById(R.id.float_view_iv_stay_left_body);
         ivStayLeftArm = findViewById(R.id.float_view_iv_stay_left_arm);
@@ -216,7 +218,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             if (isNeedStay()) {
                 playStayAnim(this, ivCover, getStayPosition());
             } else {
-                playMidAnim(ivCover);
+                playNormalAnim();
                 if (mCallback != null) {
                     mCallback.onPlayMiddleAnim();
                 }
@@ -305,7 +307,8 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     //<editor-fold>动画效果处理
-    private ObjectAnimator rotateAnim;
+    private ObjectAnimator coverRotateAnim;
+    private AnimatorSet musicMarkAnimSet;
     /**
      * 封面旋转动画时长
      */
@@ -322,6 +325,11 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 停留动画的时长
      */
     private long stayTranslateTimeInMillis = 500;
+
+    /**
+     * 音符单次动画时长
+     */
+    private long musicMarkAnimTimeInMIlls = 2000;
 
 
     /**
@@ -363,9 +371,9 @@ public class BaseStayFloatContainer extends FrameLayout {
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
         extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkRotateAnim(rotateTargetView);
+        checkCoverRotateAnim();
         AnimatorSet extendFromLeftSet = new AnimatorSet();
-        extendFromLeftSet.play(rotateAnim).after(extendFromLeftTranX);
+        extendFromLeftSet.play(coverRotateAnim).after(extendFromLeftTranX);
 
         extendFromLeftSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -424,9 +432,9 @@ public class BaseStayFloatContainer extends FrameLayout {
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkRotateAnim(rotateTargetView);
+        checkCoverRotateAnim();
         AnimatorSet extendFromRightSet = new AnimatorSet();
-        extendFromRightSet.play(rotateAnim).after(extendFromRightTranX);
+        extendFromRightSet.play(coverRotateAnim).after(extendFromRightTranX);
 
         extendFromRightSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -523,10 +531,12 @@ public class BaseStayFloatContainer extends FrameLayout {
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.setDuration(stayTranslateTimeInMillis);
 
-        checkRotateAnim(rotateTargetView);
+        checkCoverRotateAnim();
+        checkMusicMarkAnimSet(true);
 
         AnimatorSet snapLeftSet = new AnimatorSet();
-        snapLeftSet.play(rotateAnim).after(translateLeftAnim);
+        snapLeftSet.play(coverRotateAnim).with(musicMarkAnimSet).after(translateLeftAnim);
+
 
         snapLeftSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -573,10 +583,11 @@ public class BaseStayFloatContainer extends FrameLayout {
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.setDuration(stayTranslateTimeInMillis);
 
-        checkRotateAnim(rotateTargetView);
+        checkCoverRotateAnim();
+        checkMusicMarkAnimSet(true);
 
         AnimatorSet snapRightSet = new AnimatorSet();
-        snapRightSet.play(rotateAnim).after(translateRightAnim);
+        snapRightSet.play(coverRotateAnim).with(musicMarkAnimSet).after(translateRightAnim);
 
         snapRightSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -604,30 +615,146 @@ public class BaseStayFloatContainer extends FrameLayout {
         snapRightSet.start();
     }
 
-    private void playMidAnim(View targetView) {
-        playRotateAnim(targetView);
+    /**
+     * 播放正常动画
+     */
+    private void playNormalAnim() {
+        if (groupStayLeft.getVisibility() == VISIBLE) {
+            groupStayLeft.setVisibility(GONE);
+        }
+        if (groupStayRight.getVisibility() == VISIBLE) {
+            groupStayRight.setVisibility(GONE);
+        }
+        playCoverRotateAnim();
+        playMusicMarkAnim();
     }
 
-    private void checkRotateAnim(View targetView) {
-        if (rotateAnim == null) {
-            rotateAnim = ObjectAnimator.ofFloat(targetView, View.ROTATION, 0, 360);
-            rotateAnim.setInterpolator(new LinearInterpolator());
-            rotateAnim.setRepeatCount(ValueAnimator.INFINITE);
-            rotateAnim.setDuration(rotateAnimTimeInMillis);
+    private void checkCoverRotateAnim() {
+        if (coverRotateAnim == null) {
+            coverRotateAnim = ObjectAnimator.ofFloat(ivCover, View.ROTATION, 0, 360);
+            coverRotateAnim.setInterpolator(new LinearInterpolator());
+            coverRotateAnim.setRepeatCount(ValueAnimator.INFINITE);
+            coverRotateAnim.setDuration(rotateAnimTimeInMillis);
         }
     }
 
-    private void playRotateAnim(View targetView) {
-        checkRotateAnim(targetView);
-        rotateAnim.start();
+    /**
+     * 检查音符动画集合
+     * 这个动画应该需要区分当前所在屏幕的位置的
+     *
+     * @param isCheckForPlay 是不是播放前的检查
+     */
+    private void checkMusicMarkAnimSet(boolean isCheckForPlay) {
+        ivMusicMark.setVisibility(isCheckForPlay ? VISIBLE : GONE);
+        if (musicMarkAnimSet == null) {
+            ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_X, 0, 1);
+            ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_Y, 0, 1);
+            ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_X, 0, 100);
+            ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_Y, 0, -160);
+            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
+            ivMusicMark.setPivotX(0);
+            ivMusicMark.setPivotY(getHeight());
+            scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
+            scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
+            translateXAnim.setRepeatCount(ValueAnimator.INFINITE);
+            translateYAnim.setRepeatCount(ValueAnimator.INFINITE);
+            alphaAnim.setRepeatCount(ValueAnimator.INFINITE);
+            musicMarkAnimSet = new AnimatorSet();
+            musicMarkAnimSet.playTogether(scaleXAnim, scaleYAnim, translateXAnim, translateYAnim, alphaAnim);
+            musicMarkAnimSet.setDuration(musicMarkAnimTimeInMIlls);
+        }
     }
 
-    private void stopRotateAnim(View targetView) {
-        checkRotateAnim(targetView);
-        rotateAnim.pause();
+    private void playCoverRotateAnim() {
+        checkCoverRotateAnim();
+        coverRotateAnim.start();
     }
 
+    /**
+     * 音符动画
+     * 1、缩放动画
+     * 2、唯一动画
+     * 3、alpha动画
+     */
+    private void playMusicMarkAnim() {
+        checkMusicMarkAnimSet(true);
+        musicMarkAnimSet.start();
+    }
+
+    private void pauseMusicMarkAnim() {
+        checkMusicMarkAnimSet(false);
+        musicMarkAnimSet.pause();
+    }
+
+    private void pauseCoverRotateAnim() {
+        checkCoverRotateAnim();
+        coverRotateAnim.pause();
+    }
     //</editor-fold>
+
+
+    //<editor-fold>对外提供的API
+
+    /**
+     * 显示
+     */
+    public void show(boolean isPlay) {
+        setVisibility(VISIBLE);
+        if (isPlay) {
+            play();
+        } else {
+            pause();
+        }
+    }
+
+    /**
+     *
+     */
+    public void hide() {
+        setVisibility(GONE);
+    }
+
+    /**
+     *
+     */
+    public void play() {
+        if (ivPlay.getVisibility() != GONE) {
+            ivPlay.setVisibility(GONE);
+        }
+        if (isNeedStay()) {
+            playStayAnim(this, ivCover, getStayPosition());
+        } else {
+            playNormalAnim();
+        }
+
+    }
+
+    /**
+     * 隐藏
+     */
+    public void pause() {
+        if (ivPlay.getVisibility() != VISIBLE) {
+            ivPlay.setVisibility(VISIBLE);
+        }
+        pauseCoverRotateAnim();
+        pauseMusicMarkAnim();
+    }
+    //</editor-fold>
+
+    /**
+     * 资源释放操作
+     */
+    public void release() {
+        if (coverRotateAnim != null) {
+            coverRotateAnim.removeAllListeners();
+            coverRotateAnim.removeAllUpdateListeners();
+            coverRotateAnim = null;
+        }
+        if (musicMarkAnimSet != null) {
+            musicMarkAnimSet.removeAllListeners();
+            musicMarkAnimSet = null;
+        }
+    }
 
     public interface FloatCallback {
 

@@ -2,6 +2,7 @@ package cn.rainmonth.basicdemo.ui.floatview;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -12,6 +13,7 @@ import cn.rainmonth.basicdemo.R;
 public class FloatViewDemoActivity extends AppCompatActivity implements BaseStayFloatContainer.FloatCallback {
     TextView tvInfo;
     BaseStayFloatContainer floatContainer;
+    Button btnShowFloat, btnHideFloat, btnPlay, btnPause;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,14 +21,38 @@ public class FloatViewDemoActivity extends AppCompatActivity implements BaseStay
         setContentView(R.layout.activity_float_view_demo);
 
         tvInfo = findViewById(R.id.tv_info);
-        floatContainer = findViewById(R.id.tv_show_float);
-        TextView tvHideFloat = findViewById(R.id.tv_hide_float);
+        floatContainer = findViewById(R.id.float_view);
         floatContainer.setCallback(this);
 
-        tvHideFloat.setOnClickListener(new View.OnClickListener() {
+        btnShowFloat = findViewById(R.id.btn_show_float);
+        btnShowFloat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                floatContainer.show(true);
+            }
+        });
 
+        btnHideFloat = findViewById(R.id.btn_hide_float);
+        btnHideFloat.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatContainer.hide();
+            }
+        });
+
+        btnPlay = findViewById(R.id.btn_play);
+        btnPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatContainer.play();
+            }
+        });
+
+        btnPause = findViewById(R.id.btn_pause);
+        btnPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatContainer.pause();
             }
         });
     }
