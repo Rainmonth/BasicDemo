@@ -18,6 +18,14 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:visibility="visible" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/grout_stay_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="float_view_iv_stay_left_body,float_view_iv_stay_left_arm "
+        tools:visibility="visible" />
+
     <ImageView
         android:id="@+id/float_view_iv_stay_left_body"
         android:layout_width="wrap_content"
@@ -36,6 +44,14 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/float_view_iv_stay_left_body" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/grout_stay_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="float_view_iv_stay_right_body,float_view_iv_stay_right_arm "
+        tools:visibility="visible" />
+
     <ImageView
         android:id="@+id/float_view_iv_stay_right_body"
         android:layout_width="wrap_content"
@@ -45,7 +61,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
-        android:id="@+id/float_view_iv_right_arm"
+        android:id="@+id/float_view_iv_stay_right_arm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="6dp"

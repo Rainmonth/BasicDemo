@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.Group;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -64,8 +65,9 @@ public class BaseStayFloatContainer extends FrameLayout {
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
     private ImageView ivCover;
-    private ImageView ivStayLeftBody, ivStayRightBody;
-    private ImageView ivStayLeftArm, ivStayRightArm;
+    private Group groupStayLeft, groupStayRight;
+    private ImageView ivStayLeftBody, ivStayLeftArm;
+    private ImageView ivStayRightBody, ivStayRightArm;
     private ImageView ivMusicMark;
 
     public BaseStayFloatContainer(@NonNull Context context) {
@@ -92,10 +94,12 @@ public class BaseStayFloatContainer extends FrameLayout {
         View.inflate(getContext(), R.layout.view_float_container, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
+        groupStayLeft = findViewById(R.id.grout_stay_left);
         ivStayLeftBody = findViewById(R.id.float_view_iv_stay_left_body);
         ivStayLeftArm = findViewById(R.id.float_view_iv_stay_left_arm);
+        groupStayRight = findViewById(R.id.grout_stay_right);
         ivStayRightBody = findViewById(R.id.float_view_iv_stay_right_body);
-        ivStayRightArm = findViewById(R.id.float_view_iv_right_arm);
+        ivStayRightArm = findViewById(R.id.float_view_iv_stay_right_arm);
         ivMusicMark = findViewById(R.id.float_view_iv_music_mark);
     }
 
@@ -202,7 +206,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         if (isNeedPerformClick()) {
             if (isUnderStay()) {// 吸附状态
                 // 展开，这个展开一段时间后需要自动吸附，注意状态的控制
-                playExtendAnim(this, getStayPosition());
+                playExtendAnim(this, ivCover, getStayPosition());
             } else {// 非吸附状态
                 if (mCallback != null) {
                     mCallback.onFloatClick();
@@ -319,16 +323,21 @@ public class BaseStayFloatContainer extends FrameLayout {
      */
     private long stayTranslateTimeInMillis = 500;
 
+
     /**
      * 播放扩展动画
+     *
+     * @param extendTargetView 弹出动画目标View
+     * @param rotateTargetView 旋转动画目标View
+     * @param direction        当前停留的位置
      */
-    private void playExtendAnim(View targetView, @Position int direction) {
+    private void playExtendAnim(View extendTargetView, View rotateTargetView, @Position int direction) {
         if (direction == POS_LEFT) {
             // 从左边往右扩展
-            playExtendAnimFromLeft(targetView);
+            playExtendAnimFromLeft(extendTargetView, rotateTargetView);
         } else if (direction == POS_RIGHT) {
             // 从右边往左扩展
-            playExtendAnimFromRight(targetView);
+            playExtendAnimFromRight(extendTargetView, rotateTargetView);
         } else {
             // doNoting
             if (mCallback != null) {
@@ -337,14 +346,24 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
-    private void playExtendAnimFromLeft(final View targetView) {
+    /**
+     * 从左边弹出动画
+     *
+     * @param extendTargetView 弹出动画目标View
+     * @param rotateTargetView 旋转动画目标View
+     */
+    private void playExtendAnimFromLeft(final View extendTargetView, final View rotateTargetView) {
         Log.d(TAG, "playExtendAnimFromLeft()");
-        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
-                targetView.getTranslationX(), targetView.getTranslationX() + getWidth() * 3 / 4f);
+        // 弹出时只显示封面和音符，隐藏螃蟹
+        groupStayLeft.setVisibility(GONE);
+        groupStayRight.setVisibility(GONE);
+
+        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + getWidth() * 3 / 4f);
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
         extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkRotateAnim(targetView);
+        checkRotateAnim(rotateTargetView);
         AnimatorSet extendFromLeftSet = new AnimatorSet();
         extendFromLeftSet.play(rotateAnim).after(extendFromLeftTranX);
 
@@ -380,7 +399,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
-                        playStayAnimToLeft(targetView, getWidth() * 3 / 4f, true);
+                        playStayAnimToLeft(extendTargetView, getWidth() * 3 / 4f, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
                     }
@@ -389,14 +408,23 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
-    private void playExtendAnimFromRight(final View targetView) {
+    /**
+     * 从右边弹出动画
+     *
+     * @param extendTargetView 弹出动画目标View
+     * @param rotateTargetView 旋转动画目标View
+     */
+    private void playExtendAnimFromRight(View extendTargetView, final View rotateTargetView) {
         Log.d(TAG, "playExtendAnimFromRight()");
-        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
-                targetView.getTranslationX(), targetView.getTranslationX() - getWidth() * 3 / 4f);
+        // 弹出时只显示封面和音符，隐藏螃蟹
+        groupStayLeft.setVisibility(GONE);
+        groupStayRight.setVisibility(GONE);
+        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(rotateTargetView, View.TRANSLATION_X,
+                rotateTargetView.getTranslationX(), rotateTargetView.getTranslationX() - getWidth() * 3 / 4f);
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkRotateAnim(targetView);
+        checkRotateAnim(rotateTargetView);
         AnimatorSet extendFromRightSet = new AnimatorSet();
         extendFromRightSet.play(rotateAnim).after(extendFromRightTranX);
 
@@ -432,7 +460,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
-                        playStayAnimToRight(targetView, getWidth() * 3 / 4f, true);
+                        playStayAnimToRight(rotateTargetView, getWidth() * 3 / 4f, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
                     }
