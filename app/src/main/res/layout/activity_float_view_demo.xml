@@ -34,8 +34,8 @@
 
     <cn.rainmonth.basicdemo.ui.floatview.BaseStayFloatContainer
         android:id="@+id/float_view"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

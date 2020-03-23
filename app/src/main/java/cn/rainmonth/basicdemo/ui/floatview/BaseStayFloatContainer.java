@@ -48,9 +48,8 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     }
 
-    public static final int DEFAULT_STAY_DISTANCE = 200;              // 默认的吸附助理
-
-    private int leftStayDistance, rightStayDistance, topStayDistance, bottomStayDistance;
+    // 停靠的上下左右边界距离（不包括）
+    private int leftStayEdge, rightStayEdge, topStayEdge, bottomStayEdge;
     private static final int TOUCH_TIME_THRESHOLD_IN_MM = 150;      // 点击判断时间间隔（单位：毫秒）
     private static final int TOUCH_DISTANCE_THRESHOLD_IN_PX = 5;    // 点击判断位移间隔（单位：px）
     private float mDeltaX, mDeltaY;                                 //
@@ -60,7 +59,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     private Handler mHandler;                                       //
     private float mStatusBarHeight;
     private float mScreenWidth, mScreenHeight;
-    private float mFloatInvisibleWidth;                             // 吸附状态下不可见的宽度
+    private float mVisibleWidth;                                    // 吸附状态下可见的宽度
     private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
@@ -90,7 +89,8 @@ public class BaseStayFloatContainer extends FrameLayout {
         mScreenWidth = DpUtils.getScreenWidth(getContext());
         mScreenHeight = DpUtils.getScreenHeight(getContext());
         mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
-        rightStayDistance = topStayDistance = bottomStayDistance = DEFAULT_STAY_DISTANCE;
+        mVisibleWidth = DpUtils.dp2px(getContext(), 30);
+        leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
 
         View.inflate(getContext(), R.layout.view_float_container, this);
 
@@ -272,16 +272,16 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 是否需要靠左停留
      */
     private boolean isNeedStayLeft() {
-        leftStayDistance = 0;
-        return getX() < leftStayDistance;
+        leftStayEdge = 0;
+        return getX() < leftStayEdge;
     }
 
     /**
      * 是否需要靠右停留
      */
     private boolean isNeedStayRight() {
-        rightStayDistance = getWidth();
-        return getX() > mScreenWidth - rightStayDistance;
+        rightStayEdge = getWidth();
+        return getX() > mScreenWidth - rightStayEdge;
     }
 
     /**
@@ -289,9 +289,9 @@ public class BaseStayFloatContainer extends FrameLayout {
      */
     private boolean isNeedStayTop() {
         if (mIsCoverStatusBar) { // 覆盖
-            return getY() < topStayDistance;
+            return getY() < topStayEdge;
         } else {
-            return (getY() > mStatusBarHeight && getY() < topStayDistance + mStatusBarHeight);
+            return (getY() > mStatusBarHeight && getY() < topStayEdge + mStatusBarHeight);
         }
     }
 
@@ -299,7 +299,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 是否需要靠底停留
      */
     private boolean isNeedStayBottom() {
-        return getY() < mScreenHeight - bottomStayDistance;
+        return getY() < mScreenHeight - bottomStayEdge;
     }
 
     public void setCallback(FloatCallback callback) {
@@ -367,7 +367,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         groupStayRight.setVisibility(GONE);
 
         ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + getWidth() * 3 / 4f);
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + (getWidth() - mVisibleWidth));
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
         extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
@@ -407,7 +407,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
-                        playStayAnimToLeft(extendTargetView, ivCover, getWidth() * 3 / 4f, true);
+                        playStayAnimToLeft(extendTargetView, ivCover, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
                     }
@@ -428,7 +428,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         groupStayLeft.setVisibility(GONE);
         groupStayRight.setVisibility(GONE);
         ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - getWidth() * 3 / 4f);
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
@@ -468,7 +468,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
-                        playStayAnimToRight(extendTargetView, rotateTargetView, getWidth() * 3 / 4f, true);
+                        playStayAnimToRight(extendTargetView, rotateTargetView, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
                     }
@@ -478,13 +478,13 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     private boolean isNeedStayBackToLeft() {
-        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",getWidth()/4f=" + getWidth() / 4f + ",isNeedStayBackToLeft:" + (mOriginalRawX <= getWidth() / 4f));
-        return mOriginalRawX <= getWidth() / 4f;
+        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",mVisibleWidth=" + mVisibleWidth + ",isNeedStayBackToLeft:" + (mOriginalRawX <= mVisibleWidth));
+        return mOriginalRawX <= mVisibleWidth;
     }
 
     private boolean isNeedStayBackToRight() {
-        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",(mScreenWidth-getWidth()/4f)=" + (mScreenWidth - getWidth() / 4f) + ",isNeedStayBackToRight:" + (mOriginalRawX >= mScreenWidth - getWidth() / 4f));
-        return mOriginalRawX >= mScreenWidth - getWidth() / 4f;
+        Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",(mScreenWidth-mVisibleWidth)=" + (mScreenWidth - mVisibleWidth) + ",isNeedStayBackToRight:" + (mOriginalRawX >= mScreenWidth - mVisibleWidth));
+        return mOriginalRawX >= mScreenWidth - mVisibleWidth;
     }
 
     /**
@@ -493,7 +493,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      * @param stayPosition     停留的位置
      */
     private void playStayAnim(View stayTargetView, View rotateTargetView, @Position int stayPosition) {
-        float moveDistance = getSnapMoveDistance(stayPosition);
+        float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
             playStayAnimToLeft(stayTargetView, rotateTargetView, moveDistance, false);
         } else if (stayPosition == POS_RIGHT) {
@@ -501,11 +501,17 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
-    private float getSnapMoveDistance(@Position int stayPosition) {
+    /**
+     * 获取移动的距离
+     *
+     * @param stayPosition
+     * @return
+     */
+    private float getStayMoveDistance(@Position int stayPosition) {
         if (stayPosition == POS_LEFT) {
-            return Math.abs(getX() + getWidth() * 3 / 4f);
+            return Math.abs(getX() + getWidth() - mVisibleWidth);
         } else if (stayPosition == POS_RIGHT) {
-            return Math.abs(mScreenWidth - getWidth() / 4f - getX());
+            return Math.abs(mScreenWidth - mVisibleWidth - getX());
         } else {
             return 0;
         }
@@ -530,7 +536,8 @@ public class BaseStayFloatContainer extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - moveDistance);
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.setDuration(stayTranslateTimeInMillis);
-
+        // todo
+        groupStayLeft.setVisibility(VISIBLE);
         checkCoverRotateAnim();
         checkMusicMarkAnimSet(true);
 
@@ -582,6 +589,8 @@ public class BaseStayFloatContainer extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + moveDistance);
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.setDuration(stayTranslateTimeInMillis);
+        // todo
+        groupStayRight.setVisibility(VISIBLE);
 
         checkCoverRotateAnim();
         checkMusicMarkAnimSet(true);
@@ -629,6 +638,10 @@ public class BaseStayFloatContainer extends FrameLayout {
         playMusicMarkAnim();
     }
 
+    private void playKadaAnim() {
+
+    }
+
     private void checkCoverRotateAnim() {
         if (coverRotateAnim == null) {
             coverRotateAnim = ObjectAnimator.ofFloat(ivCover, View.ROTATION, 0, 360);
@@ -649,18 +662,18 @@ public class BaseStayFloatContainer extends FrameLayout {
         if (musicMarkAnimSet == null) {
             ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_X, 0, 1);
             ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.SCALE_Y, 0, 1);
-            ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_X, 0, 100);
-            ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_Y, 0, -160);
-            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
-            ivMusicMark.setPivotX(0);
-            ivMusicMark.setPivotY(getHeight());
+            ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_X, 0, DpUtils.dp2px(getContext(), (10 + 18)));
+            ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(ivMusicMark, View.TRANSLATION_Y, 0, -DpUtils.dp2px(getContext(), 48));
+//            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
+//            ivMusicMark.setPivotX(0);
+//            ivMusicMark.setPivotY(getHeight());
             scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
             scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
             translateXAnim.setRepeatCount(ValueAnimator.INFINITE);
             translateYAnim.setRepeatCount(ValueAnimator.INFINITE);
-            alphaAnim.setRepeatCount(ValueAnimator.INFINITE);
+//            alphaAnim.setRepeatCount(ValueAnimator.INFINITE);
             musicMarkAnimSet = new AnimatorSet();
-            musicMarkAnimSet.playTogether(scaleXAnim, scaleYAnim, translateXAnim, translateYAnim, alphaAnim);
+            musicMarkAnimSet.playTogether(scaleXAnim, scaleYAnim, translateXAnim, translateYAnim/*, alphaAnim*/);
             musicMarkAnimSet.setDuration(musicMarkAnimTimeInMIlls);
         }
     }
