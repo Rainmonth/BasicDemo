@@ -669,12 +669,13 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     private void playStayLeftKadaAnim() {
         Log.d(TAG, "playStayLeftKadaAnim()");
-        // 身体显示位移动画
-        ObjectAnimator kadaStayLeftBodyTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
+        AnimatorSet kadaLeftInSet = new AnimatorSet();
+        ObjectAnimator kadaStayLeftBodyInTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
                 ivStayLeftBody.getTranslationX() - mBodyWidth, ivStayLeftBody.getTranslationX());
-        // 手臂显示位移动画
-        ObjectAnimator kadaStayLeftArmTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
-                ivStayLeftArm.getTranslationX() - mArmWidth, ivStayLeftArm.getTranslationX());
+        ObjectAnimator kadaStayLeftArmInTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
+                ivStayLeftArm.getTranslationX() - mBodyWidth, ivStayLeftArm.getTranslationX());
+        kadaLeftInSet.playTogether(kadaStayLeftBodyInTranslateX, kadaStayLeftArmInTranslateX);
+        kadaLeftInSet.setDuration(500);
 
         // 手臂摆动旋转动画
         ivStayLeftArm.setPivotX(mArmWidth / 2f);
@@ -684,9 +685,43 @@ public class BaseStayFloatContainer extends FrameLayout {
         kadaStayLeftArmRotate.setStartDelay(500);
         kadaStayLeftArmRotate.setRepeatCount(2);
 
+        AnimatorSet kadaOutSet = new AnimatorSet();
+        ObjectAnimator kadaStayLeftBodyOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
+                ivStayLeftBody.getTranslationX(), ivStayLeftBody.getTranslationX() - mBodyWidth);
+        ObjectAnimator kadaStayLeftArmOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
+                ivStayLeftArm.getTranslationX(), ivStayLeftArm.getTranslationX() - mBodyWidth);
+        kadaOutSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
+        kadaOutSet.setStartDelay(1000);
+        kadaOutSet.setDuration(500);
+        kadaOutSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d(TAG, "outAnimStart()->translationX:" + ivStayLeftBody.getTranslationX());
+//                ivStayLeftArm.setVisibility(GONE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // 恢复控件的TranslationX的值
+                ivStayLeftBody.setTranslationX(ivStayLeftBody.getTranslationX() + mBodyWidth);
+                ivStayLeftArm.setTranslationX(ivStayLeftArm.getTranslationX() + mBodyWidth);
+                groupStayLeft.setVisibility(GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setDuration(500);
-        animatorSet.play(kadaStayLeftBodyTranslateX).with(kadaStayLeftArmTranslateX).before(kadaStayLeftArmRotate);
+        animatorSet.play(kadaStayLeftArmRotate).after(kadaLeftInSet).before(kadaOutSet);
         animatorSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -715,12 +750,16 @@ public class BaseStayFloatContainer extends FrameLayout {
 
     private void playStayRightKadaAnim() {
         Log.d(TAG, "playStayRightKadaAnim()");
+        AnimatorSet kadaRightInSet = new AnimatorSet();
         // 身体显示位移动画
         ObjectAnimator kadaStayRightBodyTranslateX = ObjectAnimator.ofFloat(ivStayRightBody, View.TRANSLATION_X,
-                ivStayRightBody.getTranslationX() + mArmWidth, ivStayRightBody.getTranslationX());
+                ivStayRightBody.getTranslationX() + mBodyWidth, ivStayRightBody.getTranslationX());
         // 手臂显示位移动画
         ObjectAnimator kadaStayRightArmTranslateX = ObjectAnimator.ofFloat(ivStayRightArm, View.TRANSLATION_X,
-                ivStayRightArm.getTranslationX() + mArmWidth, ivStayRightArm.getTranslationX());
+                ivStayRightArm.getTranslationX() + mBodyWidth, ivStayRightArm.getTranslationX());
+        kadaRightInSet.playTogether(kadaStayRightBodyTranslateX, kadaStayRightArmTranslateX);
+        kadaRightInSet.setDuration(500);
+
 
         // 手臂摆动旋转动画
         ivStayRightArm.setPivotX(mArmWidth / 2f);
@@ -730,8 +769,43 @@ public class BaseStayFloatContainer extends FrameLayout {
         kadaStayRightArmRotate.setStartDelay(500);
         kadaStayRightArmRotate.setRepeatCount(2);
 
+        AnimatorSet kadaRightOutSet = new AnimatorSet();
+        ObjectAnimator kadaStayLeftBodyOutTranslateX = ObjectAnimator.ofFloat(ivStayRightBody, View.TRANSLATION_X,
+                ivStayRightBody.getTranslationX(), ivStayRightBody.getTranslationX() + mBodyWidth);
+        ObjectAnimator kadaStayLeftArmOutTranslateX = ObjectAnimator.ofFloat(ivStayRightArm, View.TRANSLATION_X,
+                ivStayRightArm.getTranslationX(), ivStayRightArm.getTranslationX() + mBodyWidth);
+        kadaRightOutSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
+        kadaRightOutSet.setStartDelay(1000);
+        kadaRightOutSet.setDuration(500);
+        kadaRightOutSet.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d(TAG, "outAnimStart()->translationX:" + ivStayRightBody.getTranslationX());
+//                ivStayLeftArm.setVisibility(GONE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                // 恢复控件的TranslationX的值
+                ivStayRightBody.setTranslationX(ivStayRightBody.getTranslationX() - mBodyWidth);
+                ivStayRightArm.setTranslationX(ivStayRightArm.getTranslationX() - mBodyWidth);
+                groupStayRight.setVisibility(GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setDuration(500);
+        animatorSet.play(kadaStayRightArmRotate).after(kadaRightInSet).before(kadaRightOutSet);
         animatorSet.play(kadaStayRightBodyTranslateX).with(kadaStayRightArmTranslateX).before(kadaStayRightArmRotate);
         animatorSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -875,11 +949,12 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
         playCoverRotateAnim();
         playMusicMarkAnim();
-        if (isNeedStay()) {
-            playStayAnim(this, getStayPosition());
-        } else {
-            playNormalAnim();
-        }
+        playStayRightKadaAnim();
+//        if (isNeedStay()) {
+//            playStayAnim(this, getStayPosition());
+//        } else {
+//            playNormalAnim();
+//        }
 
     }
 
