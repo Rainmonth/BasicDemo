@@ -214,7 +214,7 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         } else {
             if (isNeedStay()) {
-                playStayAnim(this, getStayPosition());
+                playStayAnim(this, ivCover, getStayPosition());
             } else {
                 playMidAnim(ivCover);
                 if (mCallback != null) {
@@ -399,7 +399,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
-                        playStayAnimToLeft(extendTargetView, getWidth() * 3 / 4f, true);
+                        playStayAnimToLeft(extendTargetView, ivCover, getWidth() * 3 / 4f, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
                     }
@@ -414,13 +414,13 @@ public class BaseStayFloatContainer extends FrameLayout {
      * @param extendTargetView 弹出动画目标View
      * @param rotateTargetView 旋转动画目标View
      */
-    private void playExtendAnimFromRight(View extendTargetView, final View rotateTargetView) {
+    private void playExtendAnimFromRight(final View extendTargetView, final View rotateTargetView) {
         Log.d(TAG, "playExtendAnimFromRight()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
         groupStayRight.setVisibility(GONE);
-        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(rotateTargetView, View.TRANSLATION_X,
-                rotateTargetView.getTranslationX(), rotateTargetView.getTranslationX() - getWidth() * 3 / 4f);
+        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - getWidth() * 3 / 4f);
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
@@ -460,7 +460,7 @@ public class BaseStayFloatContainer extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
-                        playStayAnimToRight(rotateTargetView, getWidth() * 3 / 4f, true);
+                        playStayAnimToRight(extendTargetView, rotateTargetView, getWidth() * 3 / 4f, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
                     }
@@ -479,12 +479,17 @@ public class BaseStayFloatContainer extends FrameLayout {
         return mOriginalRawX >= mScreenWidth - getWidth() / 4f;
     }
 
-    private void playStayAnim(View targetView, @Position int stayPosition) {
+    /**
+     * @param stayTargetView   停留动画目标View
+     * @param rotateTargetView 旋转动画目标View
+     * @param stayPosition     停留的位置
+     */
+    private void playStayAnim(View stayTargetView, View rotateTargetView, @Position int stayPosition) {
         float moveDistance = getSnapMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
-            playStayAnimToLeft(targetView, moveDistance, false);
+            playStayAnimToLeft(stayTargetView, rotateTargetView, moveDistance, false);
         } else if (stayPosition == POS_RIGHT) {
-            playStayAnimToRight(targetView, moveDistance, false);
+            playStayAnimToRight(stayTargetView, rotateTargetView, moveDistance, false);
         }
     }
 
@@ -502,22 +507,23 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 播放停留在左侧动画
      * 动画一开始，mIsUnderStay就标记为true
      *
-     * @param targetView       动画View
+     * @param stayTargetView   停留动画目标View
+     * @param rotateTargetView 旋转动画目标View
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToLeft(View targetView, float moveDistance, boolean isPlayFromExtend) {
+    private void playStayAnimToLeft(View stayTargetView, View rotateTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToLeft()");
         Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
-        Log.d(TAG, "playStayAnimToLeft()->translationX:" + targetView.getTranslationX());
+        Log.d(TAG, "playStayAnimToLeft()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToLeft()->moveDistance:" + moveDistance);
         // 因为currentX和maxLeftX一直会变，故用局部变量
-        ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
-                targetView.getTranslationX(), targetView.getTranslationX() - moveDistance);
+        ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
+                stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - moveDistance);
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.setDuration(stayTranslateTimeInMillis);
 
-        checkRotateAnim(targetView);
+        checkRotateAnim(rotateTargetView);
 
         AnimatorSet snapLeftSet = new AnimatorSet();
         snapLeftSet.play(rotateAnim).after(translateLeftAnim);
@@ -552,21 +558,22 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 播放停留在右侧东话
      * 动画一开始，mIsUnderStay就标记为true
      *
-     * @param targetView       动画View
+     * @param stayTargetView   停留动画目标View
+     * @param rotateTargetView 旋转动画目标View
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToRight(View targetView, float moveDistance, boolean isPlayFromExtend) {
+    private void playStayAnimToRight(View stayTargetView, View rotateTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToRight()");
-        Log.d(TAG, "playStayAnimToRight()->translationX:" + targetView.getTranslationX());
+        Log.d(TAG, "playStayAnimToRight()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToRight()->moveDistance:" + moveDistance);
         // 因为currentX和maxRightX一直会变，故用局部变量
-        ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(targetView, View.TRANSLATION_X,
-                targetView.getTranslationX(), targetView.getTranslationX() + moveDistance);
+        ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
+                stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + moveDistance);
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.setDuration(stayTranslateTimeInMillis);
 
-        checkRotateAnim(targetView);
+        checkRotateAnim(rotateTargetView);
 
         AnimatorSet snapRightSet = new AnimatorSet();
         snapRightSet.play(rotateAnim).after(translateRightAnim);
