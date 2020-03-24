@@ -35,7 +35,6 @@ import cn.rainmonth.basicdemo.R;
 public class KaDaFloatView extends FrameLayout {
     private static String TAG = "KaDaFloatView";
 
-    private FloatCallback mCallback;                                // 悬浮回调
     public static final int POS_DEFAULT = -1;                      // 默认
     public static final int POS_TOP = 0;                           // 吸附在顶部
     public static final int POS_BOTTOM = 1;                        // 吸附在底部
@@ -56,19 +55,43 @@ public class KaDaFloatView extends FrameLayout {
     private float mOriginalX, mOriginalY, mOriginalRawX, mOriginalRawY;
     private long mLastTouchDownTime;                                // 上次按下的时间
 
-    private Handler mHandler;                                       //
-    private float mStatusBarHeight;
-    private float mScreenWidth, mScreenHeight;
+    private FloatCallback mCallback;                                // 悬浮回调
+    private Handler mHandler;                                       // handler
+    private float mStatusBarHeight;                                 // 状态栏高度
+    private float mScreenWidth, mScreenHeight;                      // 屏幕宽高
     private float mVisibleWidth;                                    // 吸附状态下可见的宽度
     private boolean mIsCoverStatusBar = false;                      // 是否覆盖状态栏
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
+    private boolean mIsPlay = false;                                // 是否正在播放
 
+    private ObjectAnimator coverRotateAnim;                         // 封面旋转动画
+    private AnimatorSet musicMarkAnimSet1, musicMarkAnimSet2;       // 音符动画
+    private long rotateAnimTimeInMillis = 2000;                     // 封面旋转动画时长
+    private long extendTranslateTimeInMillis = 500;                 // 水平扩展动画时长
+    private long extendBackDelayTimeInMillis = 4000;                // 水平扩展动画播放完成后再播放停留动画的时间间隔
+    private long stayTranslateTimeInMillis = 500;                   // 停留动画的时长
+    private long musicMarkAnimTimeInMIlls = 2000;                   // 音符单次动画时长
+
+    //解决重复点击动画坚挺多次回调的问题 添加的变量
+    boolean mIsPlayStayLeftKadaAnim = false;                        // 是否增在播放停留在左边时的kada动画
+    boolean mIsPlayStayRightKadaAnim = false;                       // 是否增在播放停留在右边时的kada动画
+    int mBodyWidth = DpUtils.dp2px(getContext(), 31);           // body的宽度
+    int mArmWidth = DpUtils.dp2px(getContext(), 19);            // arm的宽度
+    private long kadaAppearAnimTimeInMills = 500;                   // kada出现动画的执行时间
+    private long kadaArmRotateAnimTimeInMillis = 500;                // 手臂旋转动画执行一次的时间
+    private long kadaArmRotateAnimDelayTimeInMillis = 500;           // 手臂旋转动画延时执行的时间
+    private long kadaDisappearAnimTimeInMillis = 500;                // kada消失动画执行时间
+    private long kadaDisappearAnimDelayTimeInMillis = 1000;          // kada消失动画延时执行的时间
+    private int kadaArmRotateAnimRepeatCount = 2;                    // 手臂旋转动画重复次数
+
+    //<editor-fold>相关控件
     private ImageView ivCover;                                      // 封面图
     private ImageView ivPlay;                                       // 暂停播放时的播放按钮
     private Group groupStayLeft, groupStayRight;
     private ImageView ivStayLeftBody, ivStayLeftArm;
     private ImageView ivStayRightBody, ivStayRightArm;
     private ImageView ivMusicMark1, ivMusicMark2;
+    //</editor-fold>
 
     public KaDaFloatView(@NonNull Context context) {
         this(context, null);
@@ -88,6 +111,7 @@ public class KaDaFloatView extends FrameLayout {
         mHandler = new Handler(Looper.getMainLooper());
         mScreenWidth = DpUtils.getScreenWidth(getContext());
         mScreenHeight = DpUtils.getScreenHeight(getContext());
+        Log.d(TAG, "init()->w:" + mScreenWidth + ",h:" + mScreenHeight);
         mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
         mVisibleWidth = DpUtils.dp2px(getContext(), 30);
         leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
@@ -106,10 +130,33 @@ public class KaDaFloatView extends FrameLayout {
         ivMusicMark2 = findViewById(R.id.float_view_iv_music_mark2);
     }
 
+    /**
+     * 横竖屏切换处理（目前是将其移到左下角重置）
+     */
     @Override
-    public void dispatchConfigurationChanged(Configuration newConfig) {
-        super.dispatchConfigurationChanged(newConfig);
-        // todo 使用屏幕旋转的变化
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        mScreenWidth = DpUtils.getScreenWidth(getContext());
+        mScreenHeight = DpUtils.getScreenHeight(getContext());
+        Log.d(TAG, "onConfigurationChanged()->w:" + mScreenWidth + ",h:" + mScreenHeight);
+        // 使用屏幕旋转的变化
+        // 1、移动到初始位置
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    reset();
+                }
+            }, 500); // 这个500毫秒很重要，因为横竖屏切换如果立即移动View达不到一起效果
+
+        }
+
+        if (mIsPlay) {
+            play();
+        } else {
+            pause();
+        }
+
     }
 
     @Override
@@ -191,6 +238,7 @@ public class KaDaFloatView extends FrameLayout {
             desY = mScreenHeight - getHeight() - mStatusBarHeight - bottomStayEdge;
         }
 
+        Log.d(TAG, "fixPositionWhileMoving()->x:" + desX + ",y:" + desY);
         setY(desY);
     }
 
@@ -240,16 +288,16 @@ public class KaDaFloatView extends FrameLayout {
      */
     public @Position
     int getStayPosition() {
-        Log.d(TAG, "getSnapDirection()->getX():" + getX());
+        Log.d(TAG, "getStayPosition()->getX():" + getX());
         if (getX() < 0 && getX() >= -(getWidth() - mVisibleWidth)) {
-            Log.d(TAG, "getSnapDirection()->direction:left");
+            Log.d(TAG, "getStayPosition()->direction:left");
             return POS_LEFT;
         }
         if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - mVisibleWidth) {
-            Log.d(TAG, "getSnapDirection()->direction:right");
+            Log.d(TAG, "getStayPosition()->direction:right");
             return POS_RIGHT;
         }
-        Log.d(TAG, "getSnapDirection()->direction:default");
+        Log.d(TAG, "getStayPosition()->direction:default");
         return POS_DEFAULT;
     }
 
@@ -308,30 +356,6 @@ public class KaDaFloatView extends FrameLayout {
     }
 
     //<editor-fold>动画效果处理
-    private ObjectAnimator coverRotateAnim;
-    private AnimatorSet musicMarkAnimSet1, musicMarkAnimSet2;
-    /**
-     * 封面旋转动画时长
-     */
-    private long rotateAnimTimeInMillis = 2000;
-    /**
-     * 水平扩展动画时长
-     */
-    private long extendTranslateTimeInMillis = 500;
-    /**
-     * 水平扩展动画播放完成后再播放停留动画的时间间隔
-     */
-    private long extendBackDelayTimeInMillis = 4000;
-    /**
-     * 停留动画的时长
-     */
-    private long stayTranslateTimeInMillis = 500;
-
-    /**
-     * 音符单次动画时长
-     */
-    private long musicMarkAnimTimeInMIlls = 2000;
-
 
     /**
      * 播放展开动画
@@ -682,20 +706,6 @@ public class KaDaFloatView extends FrameLayout {
         }
     }
 
-    int mBodyWidth = DpUtils.dp2px(getContext(), 31);  // body的宽度
-    int mArmWidth = DpUtils.dp2px(getContext(), 19);   // arm的宽度
-
-    //解决重复点击动画坚挺多次回调的问题 添加的变量
-    boolean mIsPlayStayLeftKadaAnim = false;                // 是否增在播放停留在左边时的kada动画
-    boolean mIsPlayStayRightKadaAnim = false;               // 是否增在播放停留在右边时的kada动画
-
-    private long kadaAppearAnimTimeInMills = 500;                       // kada出现动画的执行时间
-    private long kadaArmRotateAnimTimeInMillis = 500;                   // 手臂旋转动画执行一次的时间
-    private int kadaArmRotateAnimRepeatCount = 2;                       // 手臂旋转动画重复次数
-    private long kadaArmRotateAnimDelayTimeInMillis = 500;              // 手臂旋转动画延时执行的时间
-    private long kadaDisappearAnimTimeInMillis = 500;                   // kada消失动画执行时间
-    private long kadaDisappearAnimDelayTimeInMillis = 1000;             // kada消失动画延时执行的时间
-
     /**
      * kada动画
      */
@@ -1032,6 +1042,7 @@ public class KaDaFloatView extends FrameLayout {
      * 播放
      */
     public void play() {
+        mIsPlay = true;
         playCoverRotateAnim();
         playMusicMarkAnim();
 
@@ -1047,6 +1058,7 @@ public class KaDaFloatView extends FrameLayout {
      * 暂停
      */
     public void pause() {
+        mIsPlay = false;
         pauseCoverRotateAnim();
         pauseMusicMarkAnim();
     }
@@ -1075,7 +1087,6 @@ public class KaDaFloatView extends FrameLayout {
      * 重置 回到左下方
      */
     public void reset() {
-        // 1、移动到初始位置
         move(0, mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge);
     }
 

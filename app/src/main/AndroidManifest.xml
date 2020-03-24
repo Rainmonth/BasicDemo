@@ -12,6 +12,7 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".ui.floatview.FloatViewDemoActivity"
+            android:configChanges="orientation"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".ui.viewpager.ViewPagerDemoActivity" />
         <activity

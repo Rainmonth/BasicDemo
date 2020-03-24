@@ -6,6 +6,12 @@
     android:layout_height="match_parent"
     tools:context=".ui.floatview.FloatViewDemoActivity">
 
+    <androidx.constraintlayout.widget.Group
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="btn_show_float, btn_hide_float, btn_play_left_extend_anim, btn_play_right_extend_anim, btn_play_left_kada_anim, btn_play_right_kada_anim, btn_play_left_stay_anim,btn_play_right_stay_anim" />
+
     <TextView
         android:id="@+id/tv_info"
         android:layout_width="wrap_content"

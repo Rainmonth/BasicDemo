@@ -170,6 +170,4 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
                 break;
         }
     }
-
-    // todo 资源释放操作
 }
