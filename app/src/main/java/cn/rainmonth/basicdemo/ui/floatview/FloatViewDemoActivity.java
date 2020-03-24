@@ -13,7 +13,7 @@ import cn.rainmonth.basicdemo.R;
 public class FloatViewDemoActivity extends AppCompatActivity implements BaseStayFloatContainer.FloatCallback {
     TextView tvInfo;
     BaseStayFloatContainer floatContainer;
-    Button btnShowFloat, btnHideFloat, btnPlay, btnPause;
+    Button btnShowFloat, btnHideFloat, btnPlay, btnPause,btnLeftKadaAnim, btnRightKadaAnim;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +53,21 @@ public class FloatViewDemoActivity extends AppCompatActivity implements BaseStay
             @Override
             public void onClick(View v) {
                 floatContainer.pause();
+            }
+        });
+
+        btnLeftKadaAnim = findViewById(R.id.btn_play_left_kada_anim);
+        btnLeftKadaAnim.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatContainer.playStayLeftKadaAnim();
+            }
+        });
+        btnRightKadaAnim = findViewById(R.id.btn_play_right_kada_anim);
+        btnRightKadaAnim.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                floatContainer.playStayRightKadaAnim();
             }
         });
     }
