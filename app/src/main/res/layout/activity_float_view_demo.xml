@@ -17,6 +17,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <View
+        android:id="@+id/view"
         android:layout_width="25dp"
         android:layout_height="0dp"
         android:background="@android:color/holo_green_light"
@@ -30,15 +31,6 @@
         android:background="@android:color/holo_green_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <cn.rainmonth.basicdemo.ui.floatview.BaseStayFloatContainer
-        android:id="@+id/float_view"
-        android:layout_width="84dp"
-        android:layout_height="84dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
@@ -59,6 +51,52 @@
         app:layout_constraintStart_toEndOf="@id/btn_show_float"
         app:layout_constraintTop_toBottomOf="@id/btn_play" />
 
+
+    <Button
+        android:id="@+id/btn_move_to_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="左方"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_show_float" />
+
+    <Button
+        android:id="@+id/btn_move_to_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="右方"
+        app:layout_constraintStart_toEndOf="@id/btn_move_to_left"
+        app:layout_constraintTop_toBottomOf="@+id/btn_show_float" />
+
+    <Button
+        android:id="@+id/btn_move_to_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="顶部"
+        app:layout_constraintStart_toEndOf="@+id/btn_move_to_right"
+        app:layout_constraintTop_toBottomOf="@+id/btn_show_float" />
+
+    <Button
+        android:id="@+id/btn_move_to_bottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="底部"
+        app:layout_constraintStart_toEndOf="@+id/btn_move_to_top"
+        app:layout_constraintTop_toBottomOf="@+id/btn_show_float" />
+
+    <Button
+        android:id="@+id/btn_move_to_center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="中间"
+        app:layout_constraintStart_toEndOf="@+id/btn_play_right_kada_anim"
+        app:layout_constraintTop_toBottomOf="@+id/btn_move_to_left" />
+
     <Button
         android:id="@+id/btn_play"
         android:layout_width="wrap_content"
@@ -78,13 +116,22 @@
         app:layout_constraintTop_toBottomOf="@+id/tv_info" />
 
     <Button
+        android:id="@+id/btn_reset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="重置"
+        app:layout_constraintStart_toEndOf="@+id/btn_pause"
+        app:layout_constraintTop_toBottomOf="@+id/tv_info" />
+
+    <Button
         android:id="@+id/btn_play_left_kada_anim"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="8dp"
         android:text="左边Kada动画"
-        app:layout_constraintStart_toEndOf="@id/btn_pause"
-        app:layout_constraintTop_toBottomOf="@id/tv_info" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_move_to_left" />
 
     <Button
         android:id="@+id/btn_play_right_kada_anim"
@@ -93,7 +140,51 @@
         android:padding="8dp"
         android:text="右边Kada动画"
         app:layout_constraintStart_toEndOf="@id/btn_play_left_kada_anim"
-        app:layout_constraintTop_toBottomOf="@id/tv_info" />
+        app:layout_constraintTop_toBottomOf="@+id/btn_move_to_left" />
 
+    <Button
+        android:id="@+id/btn_play_left_stay_anim"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="左边停留动画"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_play_left_kada_anim" />
+
+    <Button
+        android:id="@+id/btn_play_right_stay_anim"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="右边停留动画"
+        app:layout_constraintStart_toEndOf="@id/btn_play_left_kada_anim"
+        app:layout_constraintTop_toBottomOf="@+id/btn_play_left_stay_anim" />
+
+    <Button
+        android:id="@+id/btn_play_left_extend_anim"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="左边扩展动画"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_play_left_stay_anim" />
+
+    <Button
+        android:id="@+id/btn_play_right_extend_anim"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:text="右边扩展动画"
+        app:layout_constraintStart_toEndOf="@id/btn_play_left_kada_anim"
+        app:layout_constraintTop_toBottomOf="@+id/btn_play_left_kada_anim" />
+
+    <cn.rainmonth.basicdemo.ui.floatview.BaseStayFloatContainer
+        android:id="@+id/float_view"
+        android:layout_width="84dp"
+        android:layout_height="84dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
