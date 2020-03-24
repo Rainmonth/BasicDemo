@@ -208,7 +208,7 @@ public class BaseStayFloatContainer extends FrameLayout {
         if (isNeedPerformClick()) {
             if (isUnderStay()) {// 吸附状态
                 // 展开，这个展开一段时间后需要自动吸附，注意状态的控制
-                playExtendAnim(this, ivCover, getStayPosition());
+                playExtendAnim(this, getStayPosition());
             } else {// 非吸附状态
                 if (mCallback != null) {
                     mCallback.onFloatClick();
@@ -336,16 +336,15 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 播放扩展动画
      *
      * @param extendTargetView 弹出动画目标View
-     * @param rotateTargetView 旋转动画目标View
      * @param direction        当前停留的位置
      */
-    private void playExtendAnim(View extendTargetView, View rotateTargetView, @Position int direction) {
+    private void playExtendAnim(View extendTargetView, @Position int direction) {
         if (direction == POS_LEFT) {
             // 从左边往右扩展
-            playExtendAnimFromLeft(extendTargetView, rotateTargetView);
+            playExtendAnimFromLeft(extendTargetView);
         } else if (direction == POS_RIGHT) {
             // 从右边往左扩展
-            playExtendAnimFromRight(extendTargetView, rotateTargetView);
+            playExtendAnimFromRight(extendTargetView);
         } else {
             // doNoting
             if (mCallback != null) {
@@ -358,9 +357,8 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 从左边弹出动画
      *
      * @param extendTargetView 弹出动画目标View
-     * @param rotateTargetView 旋转动画目标View
      */
-    private void playExtendAnimFromLeft(final View extendTargetView, final View rotateTargetView) {
+    private void playExtendAnimFromLeft(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromLeft()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -420,9 +418,8 @@ public class BaseStayFloatContainer extends FrameLayout {
      * 从右边弹出动画
      *
      * @param extendTargetView 弹出动画目标View
-     * @param rotateTargetView 旋转动画目标View
      */
-    private void playExtendAnimFromRight(final View extendTargetView, final View rotateTargetView) {
+    private void playExtendAnimFromRight(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromRight()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -667,7 +664,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      */
     int mArmWidth = DpUtils.dp2px(getContext(), 19);
 
-    private void playStayLeftKadaAnim() {
+    public void playStayLeftKadaAnim() {
         Log.d(TAG, "playStayLeftKadaAnim()");
         AnimatorSet kadaLeftInSet = new AnimatorSet();
         ObjectAnimator kadaStayLeftBodyInTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
@@ -949,12 +946,12 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
         playCoverRotateAnim();
         playMusicMarkAnim();
-        playStayRightKadaAnim();
-//        if (isNeedStay()) {
-//            playStayAnim(this, getStayPosition());
-//        } else {
-//            playNormalAnim();
-//        }
+
+        if (isNeedStay()) {
+            playStayAnim(this, getStayPosition());
+        } else {
+            playNormalAnim();
+        }
 
     }
 
