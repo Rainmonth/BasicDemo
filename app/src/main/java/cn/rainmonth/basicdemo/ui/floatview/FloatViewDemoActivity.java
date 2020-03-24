@@ -10,9 +10,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import cn.rainmonth.basicdemo.R;
 
-public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloatView.FloatCallback, View.OnClickListener {
+public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatCallback, View.OnClickListener {
     TextView tvInfo;
-    KaDaFloatView floatContainer;
+    KaDaStoryFloatView floatContainer;
     Button btnPlay, btnPause, btnReset, btnShowFloat, btnHideFloat;
     Button btnMoveToLeft, btnMoveToRight, btnMoveToTop, btnMoveToBottom, btnMoveToCenter;
     Button btnLeftKadaAnim, btnRightKadaAnim;
@@ -149,20 +149,20 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
                 floatContainer.playStayRightKadaAnim();
                 break;
             case R.id.btn_play_left_stay_anim:
-                floatContainer.playStayToLeft(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_LEFT), false);
+                floatContainer.playStayToLeft(floatContainer, floatContainer.getStayMoveDistance(KaDaStoryFloatView.POS_LEFT), false);
                 break;
             case R.id.btn_play_right_stay_anim:
-                floatContainer.playStayToRight(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_RIGHT), false);
+                floatContainer.playStayToRight(floatContainer, floatContainer.getStayMoveDistance(KaDaStoryFloatView.POS_RIGHT), false);
                 break;
             case R.id.btn_play_left_extend_anim:
-                if (floatContainer.getStayPosition() == KaDaFloatView.POS_LEFT) {
+                if (floatContainer.getStayPosition() == KaDaStoryFloatView.POS_LEFT) {
                     floatContainer.playExtendFromLeft(floatContainer);
                 } else {
                     toast("请先将目标View移动道左边");
                 }
                 break;
             case R.id.btn_play_right_extend_anim:
-                if (floatContainer.getStayPosition() == KaDaFloatView.POS_RIGHT) {
+                if (floatContainer.getStayPosition() == KaDaStoryFloatView.POS_RIGHT) {
                     floatContainer.playExtendFromRight(floatContainer);
                 } else {
                     toast("请先将目标View移动道右边");

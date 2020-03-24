@@ -32,7 +32,7 @@ import cn.rainmonth.basicdemo.R;
  * @author RandyZhang
  * @date 2020/3/12 1:24 PM
  */
-public class KaDaFloatView extends FrameLayout {
+public class KaDaStoryFloatView extends FrameLayout {
     private static String TAG = "KaDaFloatView";
 
     public static final int POS_DEFAULT = -1;                      // 默认
@@ -93,15 +93,15 @@ public class KaDaFloatView extends FrameLayout {
     private ImageView ivMusicMark1, ivMusicMark2;
     //</editor-fold>
 
-    public KaDaFloatView(@NonNull Context context) {
+    public KaDaStoryFloatView(@NonNull Context context) {
         this(context, null);
     }
 
-    public KaDaFloatView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public KaDaStoryFloatView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public KaDaFloatView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public KaDaStoryFloatView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -116,7 +116,7 @@ public class KaDaFloatView extends FrameLayout {
         mVisibleWidth = DpUtils.dp2px(getContext(), 30);
         leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
 
-        View.inflate(getContext(), R.layout.view_float_container, this);
+        View.inflate(getContext(), R.layout.view_kada_story_float, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
         ivPlay = findViewById(R.id.float_view_iv_play);
