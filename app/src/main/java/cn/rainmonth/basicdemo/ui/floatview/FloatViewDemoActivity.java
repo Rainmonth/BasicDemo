@@ -61,6 +61,8 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
         btnStayRightAnim.setOnClickListener(this);
         btnLeftExtendAnim.setOnClickListener(this);
         btnRightExtendAnim.setOnClickListener(this);
+
+        floatContainer.setBottomStayEdge(DpUtils.dp2px(this, 50));
     }
 
     @Override
@@ -116,19 +118,19 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
                 floatContainer.hide();
                 break;
             case R.id.btn_move_to_left:
-                floatContainer.move(0, DpUtils.getScreenHeight(this) / 2);
+                floatContainer.move(0, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
                 break;
             case R.id.btn_move_to_right:
-                floatContainer.move(DpUtils.getScreenWidth(this), DpUtils.getScreenHeight(this) / 2);
+                floatContainer.move(DpUtils.getScreenWidth(this) - floatContainer.getWidth(), (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
                 break;
             case R.id.btn_move_to_top:
-                floatContainer.move(DpUtils.getScreenWidth(this) / 2, 0);
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, 0);
                 break;
             case R.id.btn_move_to_bottom:
-                floatContainer.move(DpUtils.getScreenWidth(this) / 2, DpUtils.getScreenHeight(this));
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, DpUtils.getScreenHeight(this));
                 break;
             case R.id.btn_move_to_center:
-                floatContainer.move(DpUtils.getScreenWidth(this) / 2, DpUtils.getScreenHeight(this) / 2);
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
                 break;
             case R.id.btn_play_left_kada_anim:
                 floatContainer.playStayLeftKadaAnim();

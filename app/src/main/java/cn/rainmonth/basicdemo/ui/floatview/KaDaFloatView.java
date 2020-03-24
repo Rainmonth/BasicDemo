@@ -186,10 +186,9 @@ public class KaDaFloatView extends FrameLayout {
             if (desY < 0) {
                 desY = 0;
             }
-
-            if (desY > mScreenHeight - getHeight() - mStatusBarHeight) {
-                desY = mScreenHeight - getHeight() - mStatusBarHeight;
-            }
+        }
+        if (desY > mScreenHeight - getHeight() - mStatusBarHeight) {
+            desY = mScreenHeight - getHeight() - mStatusBarHeight - bottomStayEdge;
         }
 
         setY(desY);
@@ -1047,20 +1046,21 @@ public class KaDaFloatView extends FrameLayout {
     }
 
     /**
-     * todo 重置
+     * 重置 回到左下方
      */
     public void reset() {
         // 1、移动到初始位置
+        move(0, mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge);
     }
 
     /**
-     * todo 移动道指定位置
+     * 移动道指定位置
      *
      * @param desX 目标位置x坐标
      * @param desY 目标位置y坐标
      */
-    public void move(int desX, int desY) {
-
+    public void move(float desX, float desY) {
+        fixPositionWhileMoving(desX, desY);
     }
     //</editor-fold>
 
