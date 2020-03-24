@@ -32,8 +32,8 @@ import cn.rainmonth.basicdemo.R;
  * @author RandyZhang
  * @date 2020/3/12 1:24 PM
  */
-public class BaseStayFloatContainer extends FrameLayout {
-    private static String TAG = "FloatView";
+public class KaDaFloatView extends FrameLayout {
+    private static String TAG = "KaDaFloatView";
 
     private FloatCallback mCallback;                                // 悬浮回调
     public static final int POS_DEFAULT = -1;                      // 默认
@@ -60,7 +60,7 @@ public class BaseStayFloatContainer extends FrameLayout {
     private float mStatusBarHeight;
     private float mScreenWidth, mScreenHeight;
     private float mVisibleWidth;                                    // 吸附状态下可见的宽度
-    private boolean mIsCoverStatusBar = true;                       // 是否覆盖状态栏
+    private boolean mIsCoverStatusBar = false;                      // 是否覆盖状态栏
     private boolean mIsUnderStay = false;                           // 是否处于吸附状态
 
     private ImageView ivCover;                                      // 封面图
@@ -70,15 +70,15 @@ public class BaseStayFloatContainer extends FrameLayout {
     private ImageView ivStayRightBody, ivStayRightArm;
     private ImageView ivMusicMark1, ivMusicMark2;
 
-    public BaseStayFloatContainer(@NonNull Context context) {
+    public KaDaFloatView(@NonNull Context context) {
         this(context, null);
     }
 
-    public BaseStayFloatContainer(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public KaDaFloatView(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public BaseStayFloatContainer(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public KaDaFloatView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -171,11 +171,11 @@ public class BaseStayFloatContainer extends FrameLayout {
      * @param desY 期待的目标y坐标
      */
     private void fixPositionWhileMoving(float desX, float desY) {
-        if (desX < -getWidth() * 3 / 4f) {
-            desX = -getWidth() * 3 / 4f;
+        if (desX < -(getWidth() - mVisibleWidth)) {
+            desX = -(getWidth() - mVisibleWidth);
         }
-        if (desX > mScreenWidth - getWidth() / 4f) {
-            desX = mScreenWidth - getWidth() / 4f;
+        if (desX > mScreenWidth - mVisibleWidth) {
+            desX = mScreenWidth - mVisibleWidth;
         }
         setX(desX);
         if (mIsCoverStatusBar) {
@@ -186,10 +186,12 @@ public class BaseStayFloatContainer extends FrameLayout {
             if (desY < 0) {
                 desY = 0;
             }
+
+            if (desY > mScreenHeight - getHeight() - mStatusBarHeight) {
+                desY = mScreenHeight - getHeight() - mStatusBarHeight;
+            }
         }
-        if (desY > mScreenHeight - getHeight()) {
-            desY = mScreenHeight - getHeight();
-        }
+
         setY(desY);
     }
 
@@ -237,14 +239,14 @@ public class BaseStayFloatContainer extends FrameLayout {
     /**
      * 获取停留的位置（左边还是右边）
      */
-    private @Position
+    public @Position
     int getStayPosition() {
         Log.d(TAG, "getSnapDirection()->getX():" + getX());
-        if (getX() < 0 && getX() >= -getWidth() * 3 / 4f) {
+        if (getX() < 0 && getX() >= -(getWidth() - mVisibleWidth)) {
             Log.d(TAG, "getSnapDirection()->direction:left");
             return POS_LEFT;
         }
-        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - getWidth() / 4f) {
+        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - mVisibleWidth) {
             Log.d(TAG, "getSnapDirection()->direction:right");
             return POS_RIGHT;
         }
@@ -333,7 +335,7 @@ public class BaseStayFloatContainer extends FrameLayout {
 
 
     /**
-     * 播放扩展动画
+     * 播放展开动画
      *
      * @param extendTargetView 弹出动画目标View
      * @param direction        当前停留的位置
@@ -358,7 +360,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      *
      * @param extendTargetView 弹出动画目标View
      */
-    private void playExtendAnimFromLeft(final View extendTargetView) {
+    public void playExtendAnimFromLeft(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromLeft()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -419,7 +421,7 @@ public class BaseStayFloatContainer extends FrameLayout {
      *
      * @param extendTargetView 弹出动画目标View
      */
-    private void playExtendAnimFromRight(final View extendTargetView) {
+    public void playExtendAnimFromRight(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromRight()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -474,21 +476,33 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
+    /**
+     * 扩展后是否需要停靠到左边
+     *
+     * @return 需要时返回true
+     */
     private boolean isNeedStayBackToLeft() {
         Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",mVisibleWidth=" + mVisibleWidth + ",isNeedStayBackToLeft:" + (mOriginalRawX <= mVisibleWidth));
         return mOriginalRawX <= mVisibleWidth;
     }
 
+    /**
+     * 展开后是否需要停靠到右边
+     *
+     * @return 需要时返回true
+     */
     private boolean isNeedStayBackToRight() {
         Log.d(TAG, "mOriginalRawX=" + mOriginalRawX + ",(mScreenWidth-mVisibleWidth)=" + (mScreenWidth - mVisibleWidth) + ",isNeedStayBackToRight:" + (mOriginalRawX >= mScreenWidth - mVisibleWidth));
         return mOriginalRawX >= mScreenWidth - mVisibleWidth;
     }
 
     /**
+     * 播放停靠动画
+     *
      * @param stayTargetView 停留动画目标View
      * @param stayPosition   停留的位置
      */
-    private void playStayAnim(View stayTargetView, @Position int stayPosition) {
+    public void playStayAnim(View stayTargetView, @Position int stayPosition) {
         float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
             playStayAnimToLeft(stayTargetView, moveDistance, false);
@@ -497,21 +511,19 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
-    /**
-     * 获取移动的距离
-     *
-     * @param stayPosition 停留的位置{@link Position#POS_LEFT},{@link Position#POS_RIGHT},etc
-     * @return 移动的距离
-     */
-    private float getStayMoveDistance(@Position int stayPosition) {
-        if (stayPosition == POS_LEFT) {
-            return Math.abs(getX() + getWidth() - mVisibleWidth);
-        } else if (stayPosition == POS_RIGHT) {
-            return Math.abs(mScreenWidth - mVisibleWidth - getX());
-        } else {
-            return 0;
+    private Runnable stayLeftKadaAnimRunnable = new Runnable() {
+        @Override
+        public void run() {
+            playStayLeftKadaAnim();
         }
-    }
+    };
+
+    private Runnable stayRightKadaAnimRunnable = new Runnable() {
+        @Override
+        public void run() {
+            playStayRightKadaAnim();
+        }
+    };
 
     /**
      * 播放停留到左侧动画
@@ -521,11 +533,12 @@ public class BaseStayFloatContainer extends FrameLayout {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayAnimToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToLeft()");
         Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
         Log.d(TAG, "playStayAnimToLeft()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToLeft()->moveDistance:" + moveDistance);
+        Log.d(TAG, "playStayAnimToLeft()->isPlayFromExtend:" + isPlayFromExtend);
         // 因为currentX和maxLeftX一直会变，故用局部变量
         ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - moveDistance);
@@ -563,13 +576,11 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         });
         snapLeftSet.start();
-        // 这里采用handler来延时而不是采用startDelayTime主要是因为，前者可保证目标在开始的动画的时候才显示
-        getHandler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                playStayLeftKadaAnim();
-            }
-        }, stayTranslateTimeInMillis);
+        if (mHandler != null) {
+            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
+            // 这里采用handler来延时而不是采用startDelayTime主要是因为，前者可保证目标在开始的动画的时候才显示
+            mHandler.postDelayed(stayLeftKadaAnimRunnable, stayTranslateTimeInMillis);
+        }
 
     }
 
@@ -581,10 +592,11 @@ public class BaseStayFloatContainer extends FrameLayout {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    private void playStayAnimToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayAnimToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToRight()");
         Log.d(TAG, "playStayAnimToRight()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToRight()->moveDistance:" + moveDistance);
+        Log.d(TAG, "playStayAnimToRight()->isPlayFromExtend:" + isPlayFromExtend);
         // 因为currentX和maxRightX一直会变，故用局部变量
         ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + moveDistance);
@@ -622,13 +634,10 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         });
         snapRightSet.start();
-        getHandler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                playStayRightKadaAnim();
-            }
-        }, stayTranslateTimeInMillis);
-
+        if (mHandler != null) {
+            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
+            mHandler.postDelayed(stayRightKadaAnimRunnable, stayTranslateTimeInMillis);
+        }
     }
 
     /**
@@ -655,50 +664,60 @@ public class BaseStayFloatContainer extends FrameLayout {
         kadaTranslateY.start();
     }
 
-    /**
-     * body的宽度
-     */
-    int mBodyWidth = DpUtils.dp2px(getContext(), 31);
-    /**
-     * arm的宽度
-     */
-    int mArmWidth = DpUtils.dp2px(getContext(), 19);
+    int mBodyWidth = DpUtils.dp2px(getContext(), 31);  // body的宽度
+    int mArmWidth = DpUtils.dp2px(getContext(), 19);   // arm的宽度
+
+    //解决重复点击动画坚挺多次回调的问题 添加的变量
+    boolean mIsPlayStayLeftKadaAnim = false;                // 是否增在播放停留在左边时的kada动画
+    boolean mIsPlayStayRightKadaAnim = false;               // 是否增在播放停留在右边时的kada动画
+
+    private long kadaAppearAnimTimeInMills = 500;                       // kada出现动画的执行时间
+    private long kadaArmRotateAnimTimeInMillis = 500;                   // 手臂旋转动画执行一次的时间
+    private int kadaArmRotateAnimRepeatCount = 2;                       // 手臂旋转动画重复次数
+    private long kadaArmRotateAnimDelayTimeInMillis = 500;              // 手臂旋转动画延时执行的时间
+    private long kadaDisappearAnimTimeInMillis = 500;                   // kada消失动画执行时间
+    private long kadaDisappearAnimDelayTimeInMillis = 1000;             // kada消失动画延时执行的时间
 
     public void playStayLeftKadaAnim() {
+        if (mIsPlayStayLeftKadaAnim) {
+            return;
+        }
         Log.d(TAG, "playStayLeftKadaAnim()");
-        AnimatorSet kadaLeftInSet = new AnimatorSet();
+        // 出现动画
+        AnimatorSet kadaLeftAppearSet = new AnimatorSet();
         ObjectAnimator kadaStayLeftBodyInTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
                 ivStayLeftBody.getTranslationX() - mBodyWidth, ivStayLeftBody.getTranslationX());
         ObjectAnimator kadaStayLeftArmInTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
                 ivStayLeftArm.getTranslationX() - mBodyWidth, ivStayLeftArm.getTranslationX());
-        kadaLeftInSet.playTogether(kadaStayLeftBodyInTranslateX, kadaStayLeftArmInTranslateX);
-        kadaLeftInSet.setDuration(500);
+        kadaLeftAppearSet.playTogether(kadaStayLeftBodyInTranslateX, kadaStayLeftArmInTranslateX);
+        kadaLeftAppearSet.setDuration(kadaAppearAnimTimeInMills);
 
         // 手臂摆动旋转动画
         ivStayLeftArm.setPivotX(mArmWidth / 2f);
         ivStayLeftArm.setPivotY(0);
         ObjectAnimator kadaStayLeftArmRotate = ObjectAnimator.ofFloat(ivStayLeftArm, View.ROTATION, 0, -45, 0, 15, 0);
-        kadaStayLeftArmRotate.setDuration(500);
-        kadaStayLeftArmRotate.setStartDelay(500);
-        kadaStayLeftArmRotate.setRepeatCount(2);
+        kadaStayLeftArmRotate.setDuration(kadaArmRotateAnimTimeInMillis);
+        kadaStayLeftArmRotate.setStartDelay(kadaArmRotateAnimDelayTimeInMillis);
+        kadaStayLeftArmRotate.setRepeatCount(kadaArmRotateAnimRepeatCount);
 
-        AnimatorSet kadaOutSet = new AnimatorSet();
+        // 消失动画
+        AnimatorSet kadaDisappearSet = new AnimatorSet();
         ObjectAnimator kadaStayLeftBodyOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
                 ivStayLeftBody.getTranslationX(), ivStayLeftBody.getTranslationX() - mBodyWidth);
         ObjectAnimator kadaStayLeftArmOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
                 ivStayLeftArm.getTranslationX(), ivStayLeftArm.getTranslationX() - mBodyWidth);
-        kadaOutSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
-        kadaOutSet.setStartDelay(1000);
-        kadaOutSet.setDuration(500);
-        kadaOutSet.addListener(new Animator.AnimatorListener() {
+        kadaDisappearSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
+        kadaDisappearSet.setStartDelay(kadaDisappearAnimDelayTimeInMillis);
+        kadaDisappearSet.setDuration(kadaDisappearAnimTimeInMillis);
+        kadaDisappearSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d(TAG, "outAnimStart()->translationX:" + ivStayLeftBody.getTranslationX());
-//                ivStayLeftArm.setVisibility(GONE);
+                Log.d(TAG, "left outAnimStart()->translationX:" + ivStayLeftBody.getTranslationX());
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
+                Log.d(TAG, "left outAnimEnd()->translationX:" + ivStayLeftBody.getTranslationX());
                 // 恢复控件的TranslationX的值
                 ivStayLeftBody.setTranslationX(ivStayLeftBody.getTranslationX() + mBodyWidth);
                 ivStayLeftArm.setTranslationX(ivStayLeftArm.getTranslationX() + mBodyWidth);
@@ -716,20 +735,23 @@ public class BaseStayFloatContainer extends FrameLayout {
             }
         });
 
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.setDuration(500);
-        animatorSet.play(kadaStayLeftArmRotate).after(kadaLeftInSet).before(kadaOutSet);
-        animatorSet.addListener(new Animator.AnimatorListener() {
+        AnimatorSet stayLeftAnimSet = new AnimatorSet();
+        stayLeftAnimSet.setDuration(500);
+        stayLeftAnimSet.play(kadaStayLeftArmRotate).after(kadaLeftAppearSet).before(kadaDisappearSet);
+        stayLeftAnimSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 if (groupStayLeft.getVisibility() != VISIBLE) {
                     groupStayLeft.setVisibility(VISIBLE);
                 }
+                mIsPlayStayLeftKadaAnim = true;
+                Log.d(TAG, "mIsPlayStayLeftKadaAnim:" + true);
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-
+                mIsPlayStayLeftKadaAnim = false;
+                Log.d(TAG, "mIsPlayStayLeftKadaAnim:" + false);
             }
 
             @Override
@@ -742,10 +764,16 @@ public class BaseStayFloatContainer extends FrameLayout {
 
             }
         });
-        animatorSet.start();
+        stayLeftAnimSet.start();
     }
 
-    private void playStayRightKadaAnim() {
+    /**
+     *
+     */
+    public void playStayRightKadaAnim() {
+        if (mIsPlayStayRightKadaAnim) {
+            return;
+        }
         Log.d(TAG, "playStayRightKadaAnim()");
         AnimatorSet kadaRightInSet = new AnimatorSet();
         // 身体显示位移动画
@@ -777,12 +805,12 @@ public class BaseStayFloatContainer extends FrameLayout {
         kadaRightOutSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                Log.d(TAG, "outAnimStart()->translationX:" + ivStayRightBody.getTranslationX());
-//                ivStayLeftArm.setVisibility(GONE);
+                Log.d(TAG, "right outAnimStart()->translationX:" + ivStayRightBody.getTranslationX());
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
+                Log.d(TAG, "right outAnimEnd()->translationX:" + ivStayRightBody.getTranslationX());
                 // 恢复控件的TranslationX的值
                 ivStayRightBody.setTranslationX(ivStayRightBody.getTranslationX() - mBodyWidth);
                 ivStayRightArm.setTranslationX(ivStayRightArm.getTranslationX() - mBodyWidth);
@@ -810,11 +838,14 @@ public class BaseStayFloatContainer extends FrameLayout {
                 if (groupStayRight.getVisibility() != VISIBLE) {
                     groupStayRight.setVisibility(VISIBLE);
                 }
+                mIsPlayStayRightKadaAnim = true;
+                Log.d(TAG, "mIsPlayStayRightKadaAnim:" + true);
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-
+                mIsPlayStayRightKadaAnim = false;
+                Log.d(TAG, "mIsPlayStayRightKadaAnim:" + false);
             }
 
             @Override
@@ -830,15 +861,6 @@ public class BaseStayFloatContainer extends FrameLayout {
         animatorSet.start();
     }
 
-    private void checkCoverRotateAnim() {
-        if (coverRotateAnim == null) {
-            coverRotateAnim = ObjectAnimator.ofFloat(ivCover, View.ROTATION, 0, 360);
-            coverRotateAnim.setInterpolator(new LinearInterpolator());
-            coverRotateAnim.setRepeatCount(ValueAnimator.INFINITE);
-            coverRotateAnim.setDuration(rotateAnimTimeInMillis);
-        }
-    }
-
     /**
      * 检查音符动画集合
      * 这个动画应该需要区分当前所在屏幕的位置的
@@ -852,14 +874,17 @@ public class BaseStayFloatContainer extends FrameLayout {
         }
     }
 
+    /**
+     * 初始化音符动画
+     *
+     * @param musicMartView 对应的音符View
+     */
     private AnimatorSet initMusicMarkAnimSet(View musicMartView) {
         ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_X, 0, 1.5f);
         ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_Y, 0, 1.5f);
         ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_X, 0, DpUtils.dp2px(getContext(), 18));
         ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_Y, 0, -DpUtils.dp2px(getContext(), 48));
 //            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
-//            ivMusicMark.setPivotX(0);
-//            ivMusicMark.setPivotY(getHeight());
         scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
         scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
         translateXAnim.setRepeatCount(ValueAnimator.INFINITE);
@@ -872,9 +897,38 @@ public class BaseStayFloatContainer extends FrameLayout {
         return musicMarkAnimSet;
     }
 
+    /**
+     * 检查封面动画集合
+     */
+    private void checkCoverRotateAnim() {
+        if (coverRotateAnim == null) {
+            coverRotateAnim = ObjectAnimator.ofFloat(ivCover, View.ROTATION, 0, 360);
+            coverRotateAnim.setInterpolator(new LinearInterpolator());
+            coverRotateAnim.setRepeatCount(ValueAnimator.INFINITE);
+            coverRotateAnim.setDuration(rotateAnimTimeInMillis);
+        }
+    }
+
+    /**
+     * 播放封面旋转动画
+     */
     private void playCoverRotateAnim() {
+        if (ivPlay.getVisibility() != GONE) {
+            ivPlay.setVisibility(GONE);
+        }
         checkCoverRotateAnim();
         coverRotateAnim.start();
+    }
+
+    /**
+     * 隐藏封面旋转动画
+     */
+    private void pauseCoverRotateAnim() {
+        if (ivPlay.getVisibility() != VISIBLE) {
+            ivPlay.setVisibility(VISIBLE);
+        }
+        checkCoverRotateAnim();
+        coverRotateAnim.pause();
     }
 
     /**
@@ -889,15 +943,17 @@ public class BaseStayFloatContainer extends FrameLayout {
             ivMusicMark1.setVisibility(VISIBLE);
         }
         musicMarkAnimSet1.start();
-        getHandler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (ivMusicMark2.getVisibility() != VISIBLE) {
-                    ivMusicMark2.setVisibility(VISIBLE);
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (ivMusicMark2.getVisibility() != VISIBLE) {
+                        ivMusicMark2.setVisibility(VISIBLE);
+                    }
+                    musicMarkAnimSet2.start();
                 }
-                musicMarkAnimSet2.start();
-            }
-        }, 1000);
+            }, 1000);
+        }
 
     }
 
@@ -908,15 +964,25 @@ public class BaseStayFloatContainer extends FrameLayout {
         musicMarkAnimSet1.pause();
         musicMarkAnimSet2.pause();
     }
-
-    private void pauseCoverRotateAnim() {
-        checkCoverRotateAnim();
-        coverRotateAnim.pause();
-    }
     //</editor-fold>
 
-
     //<editor-fold>对外提供的API
+
+    /**
+     * 获取移动的距离
+     *
+     * @param stayPosition 停留的位置{@link Position#POS_LEFT},{@link Position#POS_RIGHT},etc
+     * @return 移动的距离
+     */
+    public float getStayMoveDistance(@Position int stayPosition) {
+        if (stayPosition == POS_LEFT) {
+            return Math.abs(getX() + getWidth() - mVisibleWidth);
+        } else if (stayPosition == POS_RIGHT) {
+            return Math.abs(mScreenWidth - mVisibleWidth - getX());
+        } else {
+            return 0;
+        }
+    }
 
     /**
      * 显示
@@ -931,19 +997,16 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     /**
-     *
+     * 隐藏
      */
     public void hide() {
         setVisibility(GONE);
     }
 
     /**
-     *
+     * 播放
      */
     public void play() {
-        if (ivPlay.getVisibility() != GONE) {
-            ivPlay.setVisibility(GONE);
-        }
         playCoverRotateAnim();
         playMusicMarkAnim();
 
@@ -956,18 +1019,53 @@ public class BaseStayFloatContainer extends FrameLayout {
     }
 
     /**
-     * 隐藏
+     * 暂停
      */
     public void pause() {
-        if (ivPlay.getVisibility() != VISIBLE) {
-            ivPlay.setVisibility(VISIBLE);
-        }
         pauseCoverRotateAnim();
         pauseMusicMarkAnim();
+    }
+
+    public void setIsCoverStatusBar(boolean isCoverStatusBar) {
+        this.mIsCoverStatusBar = isCoverStatusBar;
+    }
+
+    public void setLeftStayEdge(int leftStayEdge) {
+        this.leftStayEdge = leftStayEdge;
+    }
+
+    public void setRightStayEdge(int rightStayEdge) {
+        this.rightStayEdge = rightStayEdge;
+    }
+
+    public void setTopStayEdge(int topStayEdge) {
+        this.topStayEdge = topStayEdge;
+    }
+
+    public void setBottomStayEdge(int bottomStayEdge) {
+        this.bottomStayEdge = bottomStayEdge;
+    }
+
+    /**
+     * todo 重置
+     */
+    public void reset() {
+        // 1、移动到初始位置
+    }
+
+    /**
+     * todo 移动道指定位置
+     *
+     * @param desX 目标位置x坐标
+     * @param desY 目标位置y坐标
+     */
+    public void move(int desX, int desY) {
+
     }
     //</editor-fold>
 
     /**
+     * todo 何时释放
      * 资源释放操作
      */
     public void release() {
