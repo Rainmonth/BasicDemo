@@ -128,19 +128,19 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
                 floatContainer.hide();
                 break;
             case R.id.btn_move_to_left:
-                floatContainer.move(0, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
+                floatContainer.move(0, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
                 break;
             case R.id.btn_move_to_right:
-                floatContainer.move(DpUtils.getScreenWidth(this) - floatContainer.getWidth(), (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
+                floatContainer.move(DpUtils.getScreenWidth(this) - floatContainer.getWidth(), (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
                 break;
             case R.id.btn_move_to_top:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, 0);
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, 0);
                 break;
             case R.id.btn_move_to_bottom:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, DpUtils.getScreenHeight(this));
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, DpUtils.getScreenHeight(this));
                 break;
             case R.id.btn_move_to_center:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2);
+                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
                 break;
             case R.id.btn_play_left_kada_anim:
                 floatContainer.playStayLeftKadaAnim();
