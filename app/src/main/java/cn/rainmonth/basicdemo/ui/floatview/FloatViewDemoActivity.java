@@ -81,17 +81,27 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
     }
 
     @Override
-    public void onPlaySnapAnimToLeft(View targetView, float currentX, float maxLeftX) {
+    public void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend) {
         toast("播放向左吸附动画");
     }
 
     @Override
-    public void onPlaySnapAnimToRight(View targetView, float currentX, float maxRightX) {
+    public void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend) {
         toast("播放向右吸附动画");
     }
 
     @Override
-    public void onPlayMiddleAnim() {
+    public void onPlayExtendFromLeft() {
+        toast("播放从左扩展动画");
+    }
+
+    @Override
+    public void onPlayExtendFromRight() {
+        toast("播放从右扩展动画");
+    }
+
+    @Override
+    public void onPlayNormalAnim() {
         toast("播放正常动画");
     }
 
@@ -139,21 +149,21 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaFloa
                 floatContainer.playStayRightKadaAnim();
                 break;
             case R.id.btn_play_left_stay_anim:
-                floatContainer.playStayAnimToLeft(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_LEFT), false);
+                floatContainer.playStayToLeft(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_LEFT), false);
                 break;
             case R.id.btn_play_right_stay_anim:
-                floatContainer.playStayAnimToRight(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_RIGHT), false);
+                floatContainer.playStayToRight(floatContainer, floatContainer.getStayMoveDistance(KaDaFloatView.POS_RIGHT), false);
                 break;
             case R.id.btn_play_left_extend_anim:
                 if (floatContainer.getStayPosition() == KaDaFloatView.POS_LEFT) {
-                    floatContainer.playExtendAnimFromLeft(floatContainer);
+                    floatContainer.playExtendFromLeft(floatContainer);
                 } else {
                     toast("请先将目标View移动道左边");
                 }
                 break;
             case R.id.btn_play_right_extend_anim:
                 if (floatContainer.getStayPosition() == KaDaFloatView.POS_RIGHT) {
-                    floatContainer.playExtendAnimFromRight(floatContainer);
+                    floatContainer.playExtendFromRight(floatContainer);
                 } else {
                     toast("请先将目标View移动道右边");
                 }

@@ -221,7 +221,7 @@ public class KaDaFloatView extends FrameLayout {
             } else {
                 playNormalAnim();
                 if (mCallback != null) {
-                    mCallback.onPlayMiddleAnim();
+                    mCallback.onPlayNormalAnim();
                 }
             }
         }
@@ -342,10 +342,10 @@ public class KaDaFloatView extends FrameLayout {
     private void playExtendAnim(View extendTargetView, @Position int direction) {
         if (direction == POS_LEFT) {
             // 从左边往右扩展
-            playExtendAnimFromLeft(extendTargetView);
+            playExtendFromLeft(extendTargetView);
         } else if (direction == POS_RIGHT) {
             // 从右边往左扩展
-            playExtendAnimFromRight(extendTargetView);
+            playExtendFromRight(extendTargetView);
         } else {
             // doNoting
             if (mCallback != null) {
@@ -359,7 +359,7 @@ public class KaDaFloatView extends FrameLayout {
      *
      * @param extendTargetView 弹出动画目标View
      */
-    public void playExtendAnimFromLeft(final View extendTargetView) {
+    public void playExtendFromLeft(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromLeft()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -398,7 +398,9 @@ public class KaDaFloatView extends FrameLayout {
             }
         });
         extendFromLeftSet.start();
-
+        if (mCallback != null) {
+            mCallback.onPlayExtendFromLeft();
+        }
         if (mHandler != null) {
             mHandler.postDelayed(new Runnable() {
                 @Override
@@ -406,7 +408,7 @@ public class KaDaFloatView extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendAnimFromLeft()->吸附到左边");
-                        playStayAnimToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
+                        playStayToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromLeft()->不需要吸附到左边");
                     }
@@ -420,7 +422,7 @@ public class KaDaFloatView extends FrameLayout {
      *
      * @param extendTargetView 弹出动画目标View
      */
-    public void playExtendAnimFromRight(final View extendTargetView) {
+    public void playExtendFromRight(final View extendTargetView) {
         Log.d(TAG, "playExtendAnimFromRight()");
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
@@ -458,7 +460,9 @@ public class KaDaFloatView extends FrameLayout {
             }
         });
         extendFromRightSet.start();
-
+        if (mCallback != null) {
+            mCallback.onPlayExtendFromRight();
+        }
         if (mHandler != null) {
             mHandler.postDelayed(new Runnable() {
                 @Override
@@ -466,7 +470,7 @@ public class KaDaFloatView extends FrameLayout {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendAnimFromRight()->吸附到右边");
-                        playStayAnimToRight(extendTargetView, getWidth() - mVisibleWidth, true);
+                        playStayToRight(extendTargetView, getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendAnimFromRight()->不需要吸附到右边");
                     }
@@ -504,9 +508,9 @@ public class KaDaFloatView extends FrameLayout {
     public void playStayAnim(View stayTargetView, @Position int stayPosition) {
         float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
-            playStayAnimToLeft(stayTargetView, moveDistance, false);
+            playStayToLeft(stayTargetView, moveDistance, false);
         } else if (stayPosition == POS_RIGHT) {
-            playStayAnimToRight(stayTargetView, moveDistance, false);
+            playStayToRight(stayTargetView, moveDistance, false);
         }
     }
 
@@ -532,7 +536,7 @@ public class KaDaFloatView extends FrameLayout {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    public void playStayAnimToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToLeft()");
         Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
         Log.d(TAG, "playStayAnimToLeft()->translationX:" + stayTargetView.getTranslationX());
@@ -546,12 +550,12 @@ public class KaDaFloatView extends FrameLayout {
 //        checkCoverRotateAnim();
 //        checkMusicMarkAnimSet(true);
 
-        AnimatorSet snapLeftSet = new AnimatorSet();
+        AnimatorSet stayToLeftSet = new AnimatorSet();
 //        snapLeftSet.play(coverRotateAnim).with(musicMarkAnimSet1).after(translateLeftAnim);
-        snapLeftSet.play(translateLeftAnim);
+        stayToLeftSet.play(translateLeftAnim);
 
 
-        snapLeftSet.addListener(new Animator.AnimatorListener() {
+        stayToLeftSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playStayAnimToLeft()->onAnimationStart()");
@@ -574,7 +578,10 @@ public class KaDaFloatView extends FrameLayout {
 
             }
         });
-        snapLeftSet.start();
+        stayToLeftSet.start();
+        if (mCallback != null) {
+            mCallback.onPlayStayToLeft(stayTargetView, moveDistance, true);
+        }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
             // 这里采用handler来延时而不是采用startDelayTime主要是因为，前者可保证目标在开始的动画的时候才显示
@@ -591,7 +598,7 @@ public class KaDaFloatView extends FrameLayout {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否是扩展动画导致的播放
      */
-    public void playStayAnimToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToRight()");
         Log.d(TAG, "playStayAnimToRight()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToRight()->moveDistance:" + moveDistance);
@@ -633,6 +640,9 @@ public class KaDaFloatView extends FrameLayout {
             }
         });
         snapRightSet.start();
+        if (mCallback != null) {
+            mCallback.onPlayStayToRight(stayTargetView, moveDistance, isPlayFromExtend);
+        }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayRightKadaAnimRunnable);
             mHandler.postDelayed(stayRightKadaAnimRunnable, stayTranslateTimeInMillis);
@@ -654,13 +664,22 @@ public class KaDaFloatView extends FrameLayout {
     }
 
     /**
-     * 从-getWidth到
+     * 播放kada动画
      */
     private void playStayKadaAnim() {
         ObjectAnimator kadaTranslateY = ObjectAnimator.ofFloat(groupStayLeft, View.TRANSLATION_X, -ivStayLeftBody.getTranslationX(), 0);
         kadaTranslateY.setDuration(500);
         kadaTranslateY.setStartDelay(500);
         kadaTranslateY.start();
+        int position = getStayPosition();
+        if (position == POS_LEFT) {
+            playStayLeftKadaAnim();
+        } else if (position == POS_RIGHT) {
+            playStayRightKadaAnim();
+        } else {
+            // do nothing
+            Log.d(TAG, "playStayKadaAnim()->there is no match kadaAnim for current position");
+        }
     }
 
     int mBodyWidth = DpUtils.dp2px(getContext(), 31);  // body的宽度
@@ -677,7 +696,13 @@ public class KaDaFloatView extends FrameLayout {
     private long kadaDisappearAnimTimeInMillis = 500;                   // kada消失动画执行时间
     private long kadaDisappearAnimDelayTimeInMillis = 1000;             // kada消失动画延时执行的时间
 
+    /**
+     * kada动画
+     */
     public void playStayLeftKadaAnim() {
+        if (groupStayRight.getVisibility() == VISIBLE) {
+            groupStayRight.setVisibility(GONE);
+        }
         if (mIsPlayStayLeftKadaAnim) {
             return;
         }
@@ -735,7 +760,6 @@ public class KaDaFloatView extends FrameLayout {
         });
 
         AnimatorSet stayLeftAnimSet = new AnimatorSet();
-        stayLeftAnimSet.setDuration(500);
         stayLeftAnimSet.play(kadaStayLeftArmRotate).after(kadaLeftAppearSet).before(kadaDisappearSet);
         stayLeftAnimSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -767,22 +791,25 @@ public class KaDaFloatView extends FrameLayout {
     }
 
     /**
-     *
+     * kada动画
      */
     public void playStayRightKadaAnim() {
+        if (groupStayLeft.getVisibility() == VISIBLE) {
+            groupStayLeft.setVisibility(GONE);
+        }
         if (mIsPlayStayRightKadaAnim) {
             return;
         }
         Log.d(TAG, "playStayRightKadaAnim()");
-        AnimatorSet kadaRightInSet = new AnimatorSet();
+        AnimatorSet kadaRightAppearSet = new AnimatorSet();
         // 身体显示位移动画
         ObjectAnimator kadaStayRightBodyTranslateX = ObjectAnimator.ofFloat(ivStayRightBody, View.TRANSLATION_X,
                 ivStayRightBody.getTranslationX() + mBodyWidth, ivStayRightBody.getTranslationX());
         // 手臂显示位移动画
         ObjectAnimator kadaStayRightArmTranslateX = ObjectAnimator.ofFloat(ivStayRightArm, View.TRANSLATION_X,
                 ivStayRightArm.getTranslationX() + mBodyWidth, ivStayRightArm.getTranslationX());
-        kadaRightInSet.playTogether(kadaStayRightBodyTranslateX, kadaStayRightArmTranslateX);
-        kadaRightInSet.setDuration(500);
+        kadaRightAppearSet.playTogether(kadaStayRightBodyTranslateX, kadaStayRightArmTranslateX);
+        kadaRightAppearSet.setDuration(500);
 
 
         // 手臂摆动旋转动画
@@ -793,15 +820,15 @@ public class KaDaFloatView extends FrameLayout {
         kadaStayRightArmRotate.setStartDelay(500);
         kadaStayRightArmRotate.setRepeatCount(2);
 
-        AnimatorSet kadaRightOutSet = new AnimatorSet();
+        AnimatorSet kadaRightDisappearSet = new AnimatorSet();
         ObjectAnimator kadaStayLeftBodyOutTranslateX = ObjectAnimator.ofFloat(ivStayRightBody, View.TRANSLATION_X,
                 ivStayRightBody.getTranslationX(), ivStayRightBody.getTranslationX() + mBodyWidth);
         ObjectAnimator kadaStayLeftArmOutTranslateX = ObjectAnimator.ofFloat(ivStayRightArm, View.TRANSLATION_X,
                 ivStayRightArm.getTranslationX(), ivStayRightArm.getTranslationX() + mBodyWidth);
-        kadaRightOutSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
-        kadaRightOutSet.setStartDelay(1000);
-        kadaRightOutSet.setDuration(500);
-        kadaRightOutSet.addListener(new Animator.AnimatorListener() {
+        kadaRightDisappearSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
+        kadaRightDisappearSet.setStartDelay(1000);
+        kadaRightDisappearSet.setDuration(500);
+        kadaRightDisappearSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "right outAnimStart()->translationX:" + ivStayRightBody.getTranslationX());
@@ -828,8 +855,7 @@ public class KaDaFloatView extends FrameLayout {
         });
 
         AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.setDuration(500);
-        animatorSet.play(kadaStayRightArmRotate).after(kadaRightInSet).before(kadaRightOutSet);
+        animatorSet.play(kadaStayRightArmRotate).after(kadaRightAppearSet).before(kadaRightDisappearSet);
         animatorSet.play(kadaStayRightBodyTranslateX).with(kadaStayRightArmTranslateX).before(kadaStayRightArmRotate);
         animatorSet.addListener(new Animator.AnimatorListener() {
             @Override
@@ -1065,7 +1091,6 @@ public class KaDaFloatView extends FrameLayout {
     //</editor-fold>
 
     /**
-     * todo 何时释放
      * 资源释放操作
      */
     public void release() {
@@ -1081,6 +1106,13 @@ public class KaDaFloatView extends FrameLayout {
         if (musicMarkAnimSet2 != null) {
             musicMarkAnimSet2.removeAllListeners();
             musicMarkAnimSet2 = null;
+        }
+        if (mHandler != null) {
+            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
+            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
+            stayLeftKadaAnimRunnable = null;
+            stayRightKadaAnimRunnable = null;
+            mHandler = null;
         }
     }
 
@@ -1105,25 +1137,35 @@ public class KaDaFloatView extends FrameLayout {
         /**
          * 左边吸附动画
          *
-         * @param targetView 目标View
-         * @param currentX   当前的x坐标
-         * @param maxLeftX   最左边的位置
+         * @param targetView   目标View
+         * @param moveDistance 移动的距离
+         * @param isFromExtend 是否扩展动画后的停靠
          */
-        void onPlaySnapAnimToLeft(View targetView, float currentX, float maxLeftX);
+        void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend);
 
         /**
          * 右边吸附动画
          *
-         * @param targetView 目标View
-         * @param currentX   当前的x坐标
-         * @param maxRightX  最右边的位置
+         * @param targetView   目标View
+         * @param moveDistance 移动的距离
+         * @param isFromExtend 是否扩展动画后的停靠
          */
-        void onPlaySnapAnimToRight(View targetView, float currentX, float maxRightX);
+        void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend);
+
+        /**
+         * 从左扩展
+         */
+        void onPlayExtendFromLeft();
+
+        /**
+         * 从右扩展
+         */
+        void onPlayExtendFromRight();
 
         /**
          * 正常动画
          */
-        void onPlayMiddleAnim();
+        void onPlayNormalAnim();
     }
 
     /**
