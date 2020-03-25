@@ -57,7 +57,7 @@ public class KaDaStoryFloatView extends FrameLayout {
     private long mLastTouchDownTime;                                // 上次按下的时间
 
     private WindowManager.LayoutParams mParams;                     // 布局参数
-    private FloatCallback mCallback;                                // 悬浮回调
+    private FloatViewListener mCallback;                                // 悬浮回调
     private Handler mHandler;                                       // handler
     private float mStatusBarHeight;                                 // 状态栏高度
     private float mScreenWidth, mScreenHeight;                      // 屏幕宽高
@@ -353,7 +353,7 @@ public class KaDaStoryFloatView extends FrameLayout {
         return getY() < mScreenHeight - bottomStayEdge;
     }
 
-    public void setCallback(FloatCallback callback) {
+    public void setCallback(FloatViewListener callback) {
         this.mCallback = callback;
     }
 
@@ -1133,7 +1133,7 @@ public class KaDaStoryFloatView extends FrameLayout {
         }
     }
 
-    public interface FloatCallback {
+    public interface FloatViewListener {
 
         /**
          * 悬浮窗按下回调

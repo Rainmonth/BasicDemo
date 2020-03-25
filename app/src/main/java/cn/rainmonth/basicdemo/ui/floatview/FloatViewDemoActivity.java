@@ -11,7 +11,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import cn.rainmonth.basicdemo.R;
 
-public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatCallback, View.OnClickListener {
+public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatViewListener, View.OnClickListener {
     ConstraintLayout csMainContainer;
     TextView tvInfo;
     KaDaStoryFloatView floatContainer;
