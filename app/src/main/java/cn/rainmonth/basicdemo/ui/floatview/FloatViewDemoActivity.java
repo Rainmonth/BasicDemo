@@ -7,10 +7,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import cn.rainmonth.basicdemo.R;
 
 public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatCallback, View.OnClickListener {
+    ConstraintLayout csMainContainer;
     TextView tvInfo;
     KaDaStoryFloatView floatContainer;
     Button btnPlay, btnPause, btnReset, btnShowFloat, btnHideFloat;
@@ -24,8 +26,8 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_float_view_demo);
 
+        csMainContainer = findViewById(R.id.cs_main_container);
         tvInfo = findViewById(R.id.tv_info);
-        floatContainer = findViewById(R.id.float_view);
 
         btnPlay = findViewById(R.id.btn_play);
         btnPause = findViewById(R.id.btn_pause);
@@ -44,7 +46,7 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         btnLeftExtendAnim = findViewById(R.id.btn_play_left_extend_anim);
         btnRightExtendAnim = findViewById(R.id.btn_play_right_extend_anim);
 
-        floatContainer.setCallback(this);
+
         btnShowFloat.setOnClickListener(this);
         btnHideFloat.setOnClickListener(this);
         btnReset.setOnClickListener(this);
@@ -62,7 +64,18 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         btnLeftExtendAnim.setOnClickListener(this);
         btnRightExtendAnim.setOnClickListener(this);
 
+        if (floatContainer == null) {
+            initFloatContainer();
+        }
+
+        floatContainer.setCallback(this);
         floatContainer.setBottomStayEdge(DpUtils.dp2px(this, 50));
+    }
+
+    private void initFloatContainer() {
+        floatContainer = new KaDaStoryFloatView(this);
+        ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(DpUtils.dp2px(this, 84), DpUtils.dp2px(this, 84));
+        csMainContainer.addView(floatContainer, params);
     }
 
     @Override
