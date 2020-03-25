@@ -12,6 +12,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -55,6 +56,7 @@ public class KaDaStoryFloatView extends FrameLayout {
     private float mOriginalX, mOriginalY, mOriginalRawX, mOriginalRawY;
     private long mLastTouchDownTime;                                // 上次按下的时间
 
+    private WindowManager.LayoutParams mParams;                     // 布局参数
     private FloatCallback mCallback;                                // 悬浮回调
     private Handler mHandler;                                       // handler
     private float mStatusBarHeight;                                 // 状态栏高度
@@ -1003,6 +1005,10 @@ public class KaDaStoryFloatView extends FrameLayout {
 
     //<editor-fold>对外提供的API
 
+    public void setLayoutParams(WindowManager.LayoutParams params) {
+        this.mParams = params;
+    }
+
     /**
      * 获取移动的距离
      *
@@ -1132,13 +1138,15 @@ public class KaDaStoryFloatView extends FrameLayout {
         /**
          * 悬浮窗按下回调
          */
-        void onFloatPress();
+        default void onFloatPress() {
+        }
 
         /**
          * 悬浮窗移动回调
          * never do too much create ops!!!
          */
-        void onFloatMove();
+        default void onFloatMove() {
+        }
 
         /**
          * 悬浮窗点击回调
@@ -1152,7 +1160,8 @@ public class KaDaStoryFloatView extends FrameLayout {
          * @param moveDistance 移动的距离
          * @param isFromExtend 是否扩展动画后的停靠
          */
-        void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend);
+        default void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend) {
+        }
 
         /**
          * 右边吸附动画
@@ -1161,22 +1170,26 @@ public class KaDaStoryFloatView extends FrameLayout {
          * @param moveDistance 移动的距离
          * @param isFromExtend 是否扩展动画后的停靠
          */
-        void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend);
+        default void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend) {
+        }
 
         /**
          * 从左扩展
          */
-        void onPlayExtendFromLeft();
+        default void onPlayExtendFromLeft() {
+        }
 
         /**
          * 从右扩展
          */
-        void onPlayExtendFromRight();
+        default void onPlayExtendFromRight() {
+        }
 
         /**
          * 正常动画
          */
-        void onPlayNormalAnim();
+        default void onPlayNormalAnim() {
+        }
     }
 
     /**
