@@ -7,7 +7,7 @@ import android.os.IBinder;
 
 import cn.rainmonth.basicdemo.ui.floatview.FloatActionController;
 import cn.rainmonth.basicdemo.ui.floatview.FloatCallBack;
-import cn.rainmonth.basicdemo.ui.floatview.FloatWindowManager;
+import cn.rainmonth.basicdemo.ui.floatview.manager.FloatWindowManager;
 import cn.rainmonth.basicdemo.ui.floatview.receiver.HomeWatcherReceiver;
 
 /**

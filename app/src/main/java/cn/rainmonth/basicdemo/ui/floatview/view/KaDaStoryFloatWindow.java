@@ -25,10 +25,11 @@ import androidx.constraintlayout.widget.Group;
 
 import cn.rainmonth.basicdemo.R;
 import cn.rainmonth.basicdemo.ui.floatview.DpUtils;
+import cn.rainmonth.basicdemo.ui.floatview.util.C;
 
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_DEFAULT;
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_LEFT;
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_RIGHT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_DEFAULT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_LEFT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_RIGHT;
 
 
 /**
@@ -380,6 +381,12 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
             stayRightKadaAnimRunnable = null;
             mHandler = null;
         }
+    }
+
+    @Override
+    public void move(float desX, float desY) {
+        Log.d(TAG, "move()->move to:(" + desX + "," + desY + "/");
+        fixPositionWhileMoving(desX, desY);
     }
 
     @Override
@@ -1168,17 +1175,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
     public void setBottomStayEdge(int bottomStayEdge) {
         this.bottomStayEdge = bottomStayEdge;
-    }
-
-    /**
-     * 移动道指定位置
-     *
-     * @param desX 目标位置x坐标
-     * @param desY 目标位置y坐标
-     */
-    public void move(float desX, float desY) {
-        Log.d(TAG, "move()->move to:(" + desX + "," + desY + "/");
-        fixPositionWhileMoving(desX, desY);
     }
     //</editor-fold>
 

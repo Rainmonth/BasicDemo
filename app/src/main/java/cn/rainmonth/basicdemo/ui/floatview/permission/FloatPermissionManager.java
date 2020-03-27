@@ -25,6 +25,7 @@ import cn.rainmonth.basicdemo.ui.floatview.permission.rom.RomUtils;
 /**
  * Author:xishuang
  * Date:2017.08.01
+ * todo 加上权限请求的毁掉
  * Des:悬浮窗权限适配，很全的适配http://blog.csdn.net/self_study/article/details/52859790
  */
 

@@ -23,10 +23,11 @@ import androidx.constraintlayout.widget.Group;
 
 import cn.rainmonth.basicdemo.R;
 import cn.rainmonth.basicdemo.ui.floatview.DpUtils;
+import cn.rainmonth.basicdemo.ui.floatview.util.C;
 
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_DEFAULT;
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_LEFT;
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_RIGHT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_DEFAULT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_LEFT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_RIGHT;
 
 /**
  * 支持吸附拖动的容器
@@ -46,7 +47,7 @@ public class KaDaStoryFloatView extends FrameLayout implements IFloatView {
     private long mLastTouchDownTime;                                // 上次按下的时间
 
     private WindowManager.LayoutParams mParams;                     // 布局参数
-    private FloatViewListener mCallback;                                // 悬浮回调
+    private FloatViewListener mCallback;                            // 悬浮回调
     private Handler mHandler;                                       // handler
     private float mStatusBarHeight;                                 // 状态栏高度
     private float mScreenWidth, mScreenHeight;                      // 屏幕宽高
@@ -705,6 +706,7 @@ public class KaDaStoryFloatView extends FrameLayout implements IFloatView {
     public void setLayoutParams(WindowManager.LayoutParams params) {
         this.mParams = params;
     }
+
     //<editor-fold>IFloatView
 
     /**

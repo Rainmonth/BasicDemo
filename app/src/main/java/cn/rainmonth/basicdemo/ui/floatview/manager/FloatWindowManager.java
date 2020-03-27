@@ -1,4 +1,4 @@
-package cn.rainmonth.basicdemo.ui.floatview;
+package cn.rainmonth.basicdemo.ui.floatview.manager;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -6,15 +6,13 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
-import android.view.View;
 import android.view.WindowManager;
 
 import cn.rainmonth.basicdemo.ui.floatview.view.KaDaStoryFloatWindow;
 
 /**
- * Author:xishuang
- * Date:2017.08.01
- * Des:悬浮窗统一管理，与悬浮窗交互的真正实现
+ * 悬浮窗管理器
+ * 悬浮窗统一管理，与悬浮窗交互的真正实现
  */
 public class FloatWindowManager {
     /**
@@ -39,9 +37,9 @@ public class FloatWindowManager {
         } else if (Build.VERSION.SDK_INT >= 24) { /*android7.0不能用TYPE_TOAST*/
             wmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         } else { /*以下代码块使得android6.0之后的用户不必再去手动开启悬浮窗权限*/
-            String packname = context.getPackageName();
+            String pckName = context.getPackageName();
             PackageManager pm = context.getPackageManager();
-            boolean permission = (PackageManager.PERMISSION_GRANTED == pm.checkPermission("android.permission.SYSTEM_ALERT_WINDOW", packname));
+            boolean permission = (PackageManager.PERMISSION_GRANTED == pm.checkPermission("android.permission.SYSTEM_ALERT_WINDOW", pckName));
             if (permission) {
                 wmParams.type = WindowManager.LayoutParams.TYPE_PHONE;
             } else {

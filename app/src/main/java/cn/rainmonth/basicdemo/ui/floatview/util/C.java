@@ -1,4 +1,4 @@
-package cn.rainmonth.basicdemo.ui.floatview.view;
+package cn.rainmonth.basicdemo.ui.floatview.util;
 
 public class C {
     public static class Position {

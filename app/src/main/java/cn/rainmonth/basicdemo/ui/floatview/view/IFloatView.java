@@ -2,6 +2,8 @@ package cn.rainmonth.basicdemo.ui.floatview.view;
 
 import android.view.View;
 
+import cn.rainmonth.basicdemo.ui.floatview.util.C;
+
 public interface IFloatView {
     /**
      * 播放

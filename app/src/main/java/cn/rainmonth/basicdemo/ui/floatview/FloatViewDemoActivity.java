@@ -11,12 +11,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import cn.rainmonth.basicdemo.R;
+import cn.rainmonth.basicdemo.ui.floatview.manager.FloatWindowManager;
 import cn.rainmonth.basicdemo.ui.floatview.permission.FloatPermissionManager;
 import cn.rainmonth.basicdemo.ui.floatview.view.IFloatView;
 import cn.rainmonth.basicdemo.ui.floatview.view.KaDaStoryFloatView;
 
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_LEFT;
-import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_RIGHT;
+import static cn.rainmonth.basicdemo.ui.floatview.util.C.Position.POS_LEFT;
 
 public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatViewListener, View.OnClickListener {
     ConstraintLayout csMainContainer;
@@ -154,16 +154,23 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_play:
-                if (floatContainer != null)
-                    floatContainer.play();
+//                if (floatContainer != null) {
+//                    floatContainer.play();
+//        }
+                FloatWindowManager.play();
                 break;
             case R.id.btn_pause:
-                if (floatContainer != null)
-                    floatContainer.pause();
+//                if (floatContainer != null) {
+//                    floatContainer.pause();
+//                }
+                FloatWindowManager.pause();
                 break;
             case R.id.btn_reset:
-                if (floatContainer != null)
-                    floatContainer.reset();
+//                if (floatContainer != null) {
+//                    floatContainer.reset();
+//                }
+                FloatActionController.getInstance().stopMonkServer(this);
+//                FloatActionController.getInstance().startMonkServer(this);
                 break;
             case R.id.btn_show_float:
 //                floatContainer.show(false);
@@ -179,9 +186,10 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
                 }
                 break;
             case R.id.btn_hide_float:
-                if (floatContainer != null) {
-                    floatContainer.hide();
-                }
+//                if (floatContainer != null) {
+//                    floatContainer.hide();
+//                }
+                FloatActionController.getInstance().hide();
                 break;
             case R.id.btn_move_to_left:
                 floatContainer.move(0, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
@@ -232,22 +240,24 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
                 FloatWindowManager.playStayToRight(rightMoveDistance, false);
                 break;
             case R.id.btn_play_left_extend_anim:
-                if (floatContainer != null) {
-                    if (floatContainer.getStayPosition() == POS_LEFT) {
-                        floatContainer.playExtendFromLeft(floatContainer);
-                    } else {
-                        toast("请先将目标View移动道左边");
-                    }
-                }
+//                if (floatContainer != null) {
+//                    if (floatContainer.getStayPosition() == POS_LEFT) {
+//                        floatContainer.playExtendFromLeft(floatContainer);
+//                    } else {
+//                        toast("请先将目标View移动道左边");
+//                    }
+//                }
+                FloatWindowManager.playExtendFromLeft();
                 break;
             case R.id.btn_play_right_extend_anim:
-                if (floatContainer != null) {
-                    if (floatContainer.getStayPosition() == POS_RIGHT) {
-                        floatContainer.playExtendFromRight(floatContainer);
-                    } else {
-                        toast("请先将目标View移动道右边");
-                    }
-                }
+//                if (floatContainer != null) {
+//                    if (floatContainer.getStayPosition() == POS_RIGHT) {
+//                        floatContainer.playExtendFromRight(floatContainer);
+//                    } else {
+//                        toast("请先将目标View移动道右边");
+//                    }
+//                }
+                FloatWindowManager.playExtendFromRight();
                 break;
         }
     }
