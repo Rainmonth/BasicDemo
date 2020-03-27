@@ -266,39 +266,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     boolean isClick = false;
 
     /**
-     * Action Down处理
-     * 主要记录down时的位置信息即时间
-     */
-    private void handleActionDown(MotionEvent event) {
-        mTouchStartX = event.getX();
-        mTouchStartY = event.getY();
-        mOriginalRawX = event.getRawX();
-        mOriginalRawY = event.getRawY();
-        mTouchDownTime = System.currentTimeMillis();
-
-//        stopRotateAnim(this);
-        if (mListener != null) {
-            mListener.onFloatPress();
-        }
-        Log.d(TAG, "handleActionDown()->mOriginalX:" + mTouchStartX + ",mOriginalRawX:" + mOriginalRawX);
-    }
-
-    /**
-     * Action Move处理
-     * 更新View的位置
-     */
-    private void handleActionMove(MotionEvent event) {
-        float desX = mTouchStartX + event.getRawX() - mOriginalRawX;
-        float desY = mTouchStartY + event.getRawY() - mOriginalRawY;
-
-        fixPositionWhileMoving(desX, desY);
-
-        if (mListener != null) {
-            mListener.onFloatMove();
-        }
-    }
-
-    /**
      * 修正悬浮窗的位置
      *
      * @param desX 期待的目标x坐标
@@ -336,42 +303,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     }
 
     /**
-     * Action Up处理
-     * 1、判断是否需要执行吸附效果；
-     * 2、判断是否需要执行点击事件；
-     */
-    private void handleActionUp(MotionEvent event) {
-
-        mDeltaX = mWmParams.x - mTouchStartX;
-        mDeltaY = getY() - mTouchStartY;
-        Log.d(TAG, "handleActionUp()->mDeltaX:" + mDeltaX + ",mDeltaY:" + mDeltaY);
-        // doNoting
-
-        // 优先点击处理，根据时间差判断是否要进行时间点击处理
-        if (isNeedPerformClick()) {
-            if (isUnderStay()) {// 吸附状态
-                // 展开，这个展开一段时间后需要自动吸附，注意状态的控制
-                playExtendAnim(this, getStayPosition());
-            } else {// 非吸附状态
-                if (mListener != null) {
-                    mListener.onFloatClick();
-                }
-            }
-        } else {
-            if (isNeedStay()) {
-                playStayAnim(this, getStayPosition());
-            } else {
-                if (mIsPlay) {
-                    playNormalAnim();
-                    if (mListener != null) {
-                        mListener.onPlayNormalAnim();
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * 是否处于吸附状态
      */
     private boolean isUnderStay() {
@@ -379,9 +310,79 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         return mIsUnderStay;
     }
 
-    /**
-     * 获取停留的位置（左边还是右边）
-     */
+    //<editor-fold> IFloatView实现
+
+    @Override
+    public void play() {
+        Log.d(TAG, "play()");
+        mIsPlay = true;
+        playCoverRotateAnim();
+        playMusicMarkAnim();
+
+        if (isNeedStay()) {
+            playStayAnim(this, getStayPosition());
+        } else {
+            playNormalAnim();
+        }
+
+    }
+
+    @Override
+    public void pause() {
+        Log.d(TAG, "pause");
+        mIsPlay = false;
+        pauseCoverRotateAnim();
+        pauseMusicMarkAnim();
+    }
+
+    @Override
+    public void show(boolean isPlay) {
+        Log.d(TAG, "show()->w:" + getWidth() + ",h:" + getHeight());
+        setVisibility(VISIBLE);
+        if (isPlay) {
+            play();
+        } else {
+            pause();
+        }
+    }
+
+    @Override
+    public void hide() {
+        setVisibility(GONE);
+    }
+
+    @Override
+    public void reset() {
+        Log.d(TAG, "reset()->reset to:(0, " + (mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge) + ")");
+        move(0, mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge);
+    }
+
+    @Override
+    public void release() {
+        Log.d(TAG, "release()");
+        if (coverRotateAnim != null) {
+            coverRotateAnim.removeAllListeners();
+            coverRotateAnim.removeAllUpdateListeners();
+            coverRotateAnim = null;
+        }
+        if (musicMarkAnimSet1 != null) {
+            musicMarkAnimSet1.removeAllListeners();
+            musicMarkAnimSet1 = null;
+        }
+        if (musicMarkAnimSet2 != null) {
+            musicMarkAnimSet2.removeAllListeners();
+            musicMarkAnimSet2 = null;
+        }
+        if (mHandler != null) {
+            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
+            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
+            stayLeftKadaAnimRunnable = null;
+            stayRightKadaAnimRunnable = null;
+            mHandler = null;
+        }
+    }
+
+    @Override
     public int getStayPosition() {
         Log.d(TAG, "getStayPosition()->mWmParams.x:" + mWmParams.x);
         Log.d(TAG, "playStayToRight()->tx:" + getTranslationX());
@@ -399,267 +400,12 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         return POS_DEFAULT;
     }
 
-    /**
-     * 是否当做点击处理
-     */
-    private boolean isNeedPerformClick() {
-        return (System.currentTimeMillis() - mTouchDownTime < TOUCH_TIME_THRESHOLD_IN_MM)
-                && Math.abs(mDeltaX) <= TOUCH_DISTANCE_THRESHOLD_IN_PX
-                && Math.abs(mDeltaY) <= TOUCH_DISTANCE_THRESHOLD_IN_PX;
-    }
-
-    /**
-     * 是否需要吸附效果
-     */
+    @Override
     public boolean isNeedStay() {
         return isNeedStayLeft() || isNeedStayRight() /*|| isNeedStayTop() || isNeedStayBottom()*/;
     }
 
-    /**
-     * 是否需要靠左停留
-     */
-    private boolean isNeedStayLeft() {
-        leftStayEdge = 0;
-        return mWmParams.x <= leftStayEdge;
-    }
-
-    /**
-     * 是否需要靠右停留
-     */
-    private boolean isNeedStayRight() {
-        rightStayEdge = getWidth();
-        return mWmParams.x >= mScreenWidth - rightStayEdge;
-    }
-
-    /**
-     * 是否需要靠顶停留
-     */
-    private boolean isNeedStayTop() {
-        if (mIsCoverStatusBar) { // 覆盖
-            return mWmParams.y < topStayEdge;
-        } else {
-            return (mWmParams.y > mStatusBarHeight && mWmParams.y < topStayEdge + mStatusBarHeight);
-        }
-    }
-
-    /**
-     * 是否需要靠底停留
-     */
-    private boolean isNeedStayBottom() {
-        return mWmParams.y < mScreenHeight - bottomStayEdge;
-    }
-
-    public void setCallback(FloatViewListener callback) {
-        this.mListener = callback;
-    }
-
-    //<editor-fold>动画效果处理
-
-    /**
-     * 播放展开动画
-     *
-     * @param extendTargetView 弹出动画目标View
-     * @param direction        当前停留的位置 {@link C.Position}
-     */
-    private void playExtendAnim(View extendTargetView, int direction) {
-        if (direction == POS_LEFT) {
-            // 从左边往右扩展
-            playExtendFromLeft(extendTargetView);
-        } else if (direction == POS_RIGHT) {
-            // 从右边往左扩展
-            playExtendFromRight(extendTargetView);
-        } else {
-            // doNoting
-            if (mListener != null) {
-                mListener.onFloatClick();
-            }
-        }
-    }
-
-    /**
-     * 从左边弹出动画
-     *
-     * @param extendTargetView 弹出动画目标View
-     */
-    public void playExtendFromLeft(final View extendTargetView) {
-        Log.d(TAG, "playExtendAnimFromLeft()");
-        if (getStayPosition() != POS_LEFT) {
-            Log.e(TAG, "playExtendFromLeft()->" + "当前未停留在左侧");
-            return;
-        }
-        // 弹出时只显示封面和音符，隐藏螃蟹
-        groupStayLeft.setVisibility(GONE);
-        groupStayRight.setVisibility(GONE);
-
-        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + (getWidth() - mVisibleWidth));
-        extendFromLeftTranX.setInterpolator(new LinearInterpolator());
-        extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
-
-        extendFromLeftTranX.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationStart()");
-                Log.d(TAG, "playExtendAnimFromLeft()->mIsUnderStay:改为false");
-                mIsUnderStay = false;
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationEnd()");
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-        extendFromLeftTranX.start();
-        if (mListener != null) {
-            mListener.onPlayExtendFromLeft();
-        }
-        if (mHandler != null) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // 判断是否需要进行回弹动画
-                    if (isNeedStayBackToLeft()) {
-                        Log.d(TAG, "playExtendFromLeft()->吸附到左边");
-                        playStayToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
-                    } else {
-                        Log.d(TAG, "playExtendFromLeft()->不需要吸附到左边");
-                    }
-                }
-            }, extendBackDelayTimeInMillis);
-        }
-    }
-
-    /**
-     * 从右边弹出动画
-     *
-     * @param extendTargetView 弹出动画目标View
-     */
-    public void playExtendFromRight(final View extendTargetView) {
-        if (getStayPosition() != POS_RIGHT) {
-            Log.e(TAG, "playExtendFromRight()->" + "当前未停留在左侧");
-            return;
-        }
-        Log.d(TAG, "playExtendAnimFromRight()");
-        // 弹出时只显示封面和音符，隐藏螃蟹
-        groupStayLeft.setVisibility(GONE);
-        groupStayRight.setVisibility(GONE);
-        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
-        extendFromRightTranX.setInterpolator(new LinearInterpolator());
-        extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
-
-        extendFromRightTranX.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-                Log.d(TAG, "playExtendFromRight()->onAnimationStart()");
-                Log.d(TAG, "playExtendFromRight()->mIsUnderStay:改为false");
-                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
-                mIsUnderStay = false;
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                Log.d(TAG, "playExtendFromRight()->onAnimationEnd()");
-                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-        extendFromRightTranX.start();
-        if (mListener != null) {
-            mListener.onPlayExtendFromRight();
-        }
-        if (mHandler != null) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // 判断是否需要进行回弹动画
-                    if (isNeedStayBackToRight()) {
-                        Log.d(TAG, "playExtendFromRight()->吸附到右边");
-                        playStayToRight(extendTargetView, getWidth() - mVisibleWidth, true);
-                    } else {
-                        Log.d(TAG, "playExtendFromRight()->不需要吸附到右边");
-                    }
-                }
-            }, extendBackDelayTimeInMillis);
-        }
-    }
-
-    /**
-     * 扩展后是否需要停靠到左边
-     *
-     * @return 需要时返回true
-     */
-    private boolean isNeedStayBackToLeft() {
-        Log.d(TAG, "mWmParams.x=" + mWmParams.x + ",mVisibleWidth=" + mVisibleWidth + ",isNeedStayBackToLeft:" + (mWmParams.x <= mVisibleWidth));
-        return mWmParams.x <= mVisibleWidth;
-    }
-
-    /**
-     * 展开后是否需要停靠到右边
-     *
-     * @return 需要时返回true
-     */
-    private boolean isNeedStayBackToRight() {
-        Log.d(TAG, "mWmParams.x=" + mWmParams.x + ",(mScreenWidth-mVisibleWidth)=" + (mScreenWidth - mVisibleWidth) + ",isNeedStayBackToRight:" + (mWmParams.x >= mScreenWidth - mVisibleWidth));
-        return mWmParams.x >= mScreenWidth - mVisibleWidth;
-    }
-
-    /**
-     * 播放停靠动画
-     *
-     * @param stayTargetView 停留动画目标View
-     * @param stayPosition   停留的位置 {@link C.Position}
-     */
-    public void playStayAnim(View stayTargetView, int stayPosition) {
-        float moveDistance = getStayMoveDistance(stayPosition);
-        if (stayPosition == POS_LEFT) {
-            playStayToLeft(stayTargetView, moveDistance, false);
-        } else if (stayPosition == POS_RIGHT) {
-            playStayToRight(stayTargetView, moveDistance, false);
-        }
-    }
-
-    private Runnable stayLeftKadaAnimRunnable = new Runnable() {
-        @Override
-        public void run() {
-            playStayLeftKadaAnim();
-        }
-    };
-
-    private Runnable stayRightKadaAnimRunnable = new Runnable() {
-        @Override
-        public void run() {
-            playStayRightKadaAnim();
-        }
-    };
-
-    /**
-     * 播放停留到左侧动画
-     * 动画一开始，mIsUnderStay就标记为true
-     *
-     * @param stayTargetView   停留动画目标View
-     * @param moveDistance     移动距离
-     * @param isPlayFromExtend 是否是扩展动画导致的播放
-     */
+    @Override
     public void playStayToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayToLeft()");
         Log.d(TAG, "playStayToLeft()->mWmParams.x:" + mWmParams.x);
@@ -730,14 +476,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
     }
 
-    /**
-     * 播放停留在右侧东话
-     * 动画一开始，mIsUnderStay就标记为true
-     *
-     * @param stayTargetView   停留动画目标View
-     * @param moveDistance     移动距离
-     * @param isPlayFromExtend 是否是扩展动画导致的播放
-     */
+    @Override
     public void playStayToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayToRight()");
         Log.d(TAG, "playStayToLeft()->mWmParams.x:" + mWmParams.x);
@@ -808,6 +547,230 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
             mHandler.postDelayed(stayRightKadaAnimRunnable, stayTranslateTimeInMillis + 500);
         }
     }
+
+    @Override
+    public void playExtendFromLeft(final View extendTargetView) {
+        Log.d(TAG, "playExtendAnimFromLeft()");
+        if (getStayPosition() != POS_LEFT) {
+            Log.e(TAG, "playExtendFromLeft()->" + "当前未停留在左侧");
+            return;
+        }
+        // 弹出时只显示封面和音符，隐藏螃蟹
+        groupStayLeft.setVisibility(GONE);
+        groupStayRight.setVisibility(GONE);
+
+        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + (getWidth() - mVisibleWidth));
+        extendFromLeftTranX.setInterpolator(new LinearInterpolator());
+        extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
+
+        extendFromLeftTranX.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationStart()");
+                Log.d(TAG, "playExtendAnimFromLeft()->mIsUnderStay:改为false");
+                mIsUnderStay = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d(TAG, "playExtendAnimFromLeft()->onAnimationEnd()");
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        extendFromLeftTranX.start();
+        if (mListener != null) {
+            mListener.onPlayExtendFromLeft();
+        }
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // 判断是否需要进行回弹动画
+                    if (isNeedStayBackToLeft()) {
+                        Log.d(TAG, "playExtendFromLeft()->吸附到左边");
+                        playStayToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
+                    } else {
+                        Log.d(TAG, "playExtendFromLeft()->不需要吸附到左边");
+                    }
+                }
+            }, extendBackDelayTimeInMillis);
+        }
+    }
+
+    @Override
+    public void playExtendFromRight(final View extendTargetView) {
+        if (getStayPosition() != POS_RIGHT) {
+            Log.e(TAG, "playExtendFromRight()->" + "当前未停留在左侧");
+            return;
+        }
+        Log.d(TAG, "playExtendAnimFromRight()");
+        // 弹出时只显示封面和音符，隐藏螃蟹
+        groupStayLeft.setVisibility(GONE);
+        groupStayRight.setVisibility(GONE);
+        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
+                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
+        extendFromRightTranX.setInterpolator(new LinearInterpolator());
+        extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
+
+        extendFromRightTranX.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                Log.d(TAG, "playExtendFromRight()->onAnimationStart()");
+                Log.d(TAG, "playExtendFromRight()->mIsUnderStay:改为false");
+                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
+                mIsUnderStay = false;
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                Log.d(TAG, "playExtendFromRight()->onAnimationEnd()");
+                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        extendFromRightTranX.start();
+        if (mListener != null) {
+            mListener.onPlayExtendFromRight();
+        }
+        if (mHandler != null) {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    // 判断是否需要进行回弹动画
+                    if (isNeedStayBackToRight()) {
+                        Log.d(TAG, "playExtendFromRight()->吸附到右边");
+                        playStayToRight(extendTargetView, getWidth() - mVisibleWidth, true);
+                    } else {
+                        Log.d(TAG, "playExtendFromRight()->不需要吸附到右边");
+                    }
+                }
+            }, extendBackDelayTimeInMillis);
+        }
+    }
+
+    @Override
+    public boolean isNeedStayBackToLeft() {
+        Log.d(TAG, "mWmParams.x=" + mWmParams.x + ",mVisibleWidth=" + mVisibleWidth + ",isNeedStayBackToLeft:" + (mWmParams.x <= mVisibleWidth));
+        return mWmParams.x <= mVisibleWidth;
+    }
+
+    @Override
+    public boolean isNeedStayBackToRight() {
+        Log.d(TAG, "mWmParams.x=" + mWmParams.x + ",(mScreenWidth-mVisibleWidth)=" + (mScreenWidth - mVisibleWidth) + ",isNeedStayBackToRight:" + (mWmParams.x >= mScreenWidth - mVisibleWidth));
+        return mWmParams.x >= mScreenWidth - mVisibleWidth;
+    }
+    //</editor-fold>
+
+
+    /**
+     * 是否需要靠左停留
+     */
+    private boolean isNeedStayLeft() {
+        leftStayEdge = 0;
+        return mWmParams.x <= leftStayEdge;
+    }
+
+    /**
+     * 是否需要靠右停留
+     */
+    private boolean isNeedStayRight() {
+        rightStayEdge = getWidth();
+        return mWmParams.x >= mScreenWidth - rightStayEdge;
+    }
+
+    /**
+     * 是否需要靠顶停留
+     */
+    private boolean isNeedStayTop() {
+        if (mIsCoverStatusBar) { // 覆盖
+            return mWmParams.y < topStayEdge;
+        } else {
+            return (mWmParams.y > mStatusBarHeight && mWmParams.y < topStayEdge + mStatusBarHeight);
+        }
+    }
+
+    /**
+     * 是否需要靠底停留
+     */
+    private boolean isNeedStayBottom() {
+        return mWmParams.y < mScreenHeight - bottomStayEdge;
+    }
+
+    public void setCallback(FloatViewListener callback) {
+        this.mListener = callback;
+    }
+
+    //<editor-fold>动画效果处理
+
+    /**
+     * 播放展开动画
+     *
+     * @param extendTargetView 弹出动画目标View
+     * @param direction        当前停留的位置 {@link C.Position}
+     */
+    private void playExtendAnim(View extendTargetView, int direction) {
+        if (direction == POS_LEFT) {
+            // 从左边往右扩展
+            playExtendFromLeft(extendTargetView);
+        } else if (direction == POS_RIGHT) {
+            // 从右边往左扩展
+            playExtendFromRight(extendTargetView);
+        } else {
+            // doNoting
+            if (mListener != null) {
+                mListener.onFloatClick();
+            }
+        }
+    }
+
+
+    /**
+     * 播放停靠动画
+     *
+     * @param stayTargetView 停留动画目标View
+     * @param stayPosition   停留的位置 {@link C.Position}
+     */
+    public void playStayAnim(View stayTargetView, int stayPosition) {
+        float moveDistance = getStayMoveDistance(stayPosition);
+        if (stayPosition == POS_LEFT) {
+            playStayToLeft(stayTargetView, moveDistance, false);
+        } else if (stayPosition == POS_RIGHT) {
+            playStayToRight(stayTargetView, moveDistance, false);
+        }
+    }
+
+    private Runnable stayLeftKadaAnimRunnable = new Runnable() {
+        @Override
+        public void run() {
+            playStayLeftKadaAnim();
+        }
+    };
+
+    private Runnable stayRightKadaAnimRunnable = new Runnable() {
+        @Override
+        public void run() {
+            playStayRightKadaAnim();
+        }
+    };
 
     /**
      * 播放正常动画
@@ -1187,80 +1150,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         }
     }
 
-    /**
-     * 显示
-     */
-    public void show(boolean isPlay) {
-        Log.d(TAG, "show()->w:" + getWidth() + ",h:" + getHeight());
-        setVisibility(VISIBLE);
-        if (isPlay) {
-            play();
-        } else {
-            pause();
-        }
-    }
-
-    /**
-     * 隐藏
-     */
-    public void hide() {
-        setVisibility(GONE);
-    }
-
-    /**
-     * 播放
-     */
-    public void play() {
-        Log.d(TAG, "play()");
-        mIsPlay = true;
-        playCoverRotateAnim();
-        playMusicMarkAnim();
-
-        if (isNeedStay()) {
-            playStayAnim(this, getStayPosition());
-        } else {
-            playNormalAnim();
-        }
-
-    }
-
-    /**
-     * 暂停
-     */
-    public void pause() {
-        Log.d(TAG, "pause");
-        mIsPlay = false;
-        pauseCoverRotateAnim();
-        pauseMusicMarkAnim();
-    }
-
-    /**
-     * 资源释放操作
-     */
-    public void release() {
-        Log.d(TAG, "release()");
-        if (coverRotateAnim != null) {
-            coverRotateAnim.removeAllListeners();
-            coverRotateAnim.removeAllUpdateListeners();
-            coverRotateAnim = null;
-        }
-        if (musicMarkAnimSet1 != null) {
-            musicMarkAnimSet1.removeAllListeners();
-            musicMarkAnimSet1 = null;
-        }
-        if (musicMarkAnimSet2 != null) {
-            musicMarkAnimSet2.removeAllListeners();
-            musicMarkAnimSet2 = null;
-        }
-        if (mHandler != null) {
-            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
-            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
-            stayLeftKadaAnimRunnable = null;
-            stayRightKadaAnimRunnable = null;
-            mHandler = null;
-        }
-    }
-
     public void setIsCoverStatusBar(boolean isCoverStatusBar) {
         this.mIsCoverStatusBar = isCoverStatusBar;
     }
@@ -1279,14 +1168,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
     public void setBottomStayEdge(int bottomStayEdge) {
         this.bottomStayEdge = bottomStayEdge;
-    }
-
-    /**
-     * 重置 回到左下方
-     */
-    public void reset() {
-        Log.d(TAG, "reset()->reset to:(0, " + (mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge) + ")");
-        move(0, mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge);
     }
 
     /**
