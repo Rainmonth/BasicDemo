@@ -639,7 +639,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         Log.d(TAG, "playStayToLeft()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayToLeft()->moveDistance:" + moveDistance);
         Log.d(TAG, "playStayToLeft()->isPlayFromExtend:" + isPlayFromExtend);
-        // 因为currentX和maxLeftX一直会变，故用局部变量
 
         ValueAnimator windowTLAnim = ValueAnimator.ofInt(mWmParams.x, 0);
         windowTLAnim.setDuration(300);
@@ -655,7 +654,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
                 }
             }
         });
-
+        // 因为currentX和maxLeftX一直会变，故用局部变量
         ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
         translateLeftAnim.setInterpolator(new LinearInterpolator());
@@ -688,6 +687,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         animatorSet.playSequentially(windowTLAnim, translateLeftAnim);
         animatorSet.setDuration(stayTranslateTimeInMillis);
         animatorSet.start();
+
         if (mListener != null) {
             mListener.onPlayStayToLeft(stayTargetView, moveDistance, true);
         }
@@ -709,7 +709,11 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
      */
     public void playStayToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayToRight()");
+        Log.d(TAG, "playStayToLeft()->mWmParams.x:" + mWmParams.x);
+        Log.d(TAG, "playStayToLeft()->translationX:" + stayTargetView.getTranslationX());
+        Log.d(TAG, "playStayToLeft()->moveDistance:" + moveDistance);
         Log.d(TAG, "playStayToRight()->isPlayFromExtend:" + isPlayFromExtend);
+
         ValueAnimator windowTRAnim = ValueAnimator.ofInt(mWmParams.x, (int) mScreenWidth);
         windowTRAnim.setDuration(300);
         windowTRAnim.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -757,7 +761,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playSequentially(windowTRAnim, translateRightAnim);
-        translateRightAnim.setDuration(stayTranslateTimeInMillis);
+        animatorSet.setDuration(stayTranslateTimeInMillis);
         animatorSet.start();
 
         if (mListener != null) {
@@ -765,6 +769,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayRightKadaAnimRunnable);
+            // 这里采用handler来延时而不是采用startDelayTime主要是因为，前者可保证目标在开始的动画的时候才显示
             mHandler.postDelayed(stayRightKadaAnimRunnable, stayTranslateTimeInMillis);
         }
     }
