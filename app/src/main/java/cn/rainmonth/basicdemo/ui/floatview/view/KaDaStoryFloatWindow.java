@@ -1,4 +1,4 @@
-package cn.rainmonth.basicdemo.ui.floatview;
+package cn.rainmonth.basicdemo.ui.floatview.view;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -16,48 +16,45 @@ import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.Group;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
 import cn.rainmonth.basicdemo.R;
+import cn.rainmonth.basicdemo.ui.floatview.DpUtils;
+
+import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_DEFAULT;
+import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_LEFT;
+import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_RIGHT;
+
 
 /**
- * 支持吸附拖动的容器
+ * 主要不同在于onTouchEvent的处理上
  *
- * @author RandyZhang
+ * @author 张豪成
  * @date 2020/3/12 1:24 PM
  */
-public class KaDaStoryFloatView extends FrameLayout {
-    private static String TAG = "KaDaFloatView";
+public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
+    private static String TAG = "FloatWindow";
 
-    public static final int POS_DEFAULT = -1;                      // 默认
-    public static final int POS_TOP = 0;                           // 吸附在顶部
-    public static final int POS_BOTTOM = 1;                        // 吸附在底部
-    public static final int POS_LEFT = 2;                          // 吸附在左边
-    public static final int POS_RIGHT = 3;                         // 吸附在右边
 
-    @IntDef({POS_DEFAULT, POS_TOP, POS_BOTTOM, POS_LEFT, POS_RIGHT})
-    @Retention(RetentionPolicy.SOURCE)
-    @interface Position {                                           // 吸附的方向
-
-    }
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mWmParams;
+    private Context mContext;
 
     // 停靠的上下左右边界距离（不包括）
     private int leftStayEdge, rightStayEdge, topStayEdge, bottomStayEdge;
     private static final int TOUCH_TIME_THRESHOLD_IN_MM = 150;      // 点击判断时间间隔（单位：毫秒）
     private static final int TOUCH_DISTANCE_THRESHOLD_IN_PX = 5;    // 点击判断位移间隔（单位：px）
     private float mDeltaX, mDeltaY;                                 //
-    private float mOriginalX, mOriginalY, mOriginalRawX, mOriginalRawY;
-    private long mLastTouchDownTime;                                // 上次按下的时间
+    private float mTouchStartX, mTouchStartY;                       // 按下时的坐标
+    private float mOriginalRawX, mOriginalRawY;                     // 相对屏幕左上角的坐标
+    private long mTouchDownTime;                                    // 按下的时间
+    private long mTouchUpTime;                                      // 松开的事件
 
-    private WindowManager.LayoutParams mParams;                     // 布局参数
-    private FloatViewListener mCallback;                                // 悬浮回调
+    private FloatViewListener mListener;                            // 悬浮回调
     private Handler mHandler;                                       // handler
     private float mStatusBarHeight;                                 // 状态栏高度
     private float mScreenWidth, mScreenHeight;                      // 屏幕宽高
@@ -68,57 +65,60 @@ public class KaDaStoryFloatView extends FrameLayout {
 
     private ObjectAnimator coverRotateAnim;                         // 封面旋转动画
     private AnimatorSet musicMarkAnimSet1, musicMarkAnimSet2;       // 音符动画
-    private long rotateAnimTimeInMillis = 2000;                     // 封面旋转动画时长
+    private long rotateAnimTimeInMillis = 6000;                     // 封面旋转动画时长
     private long extendTranslateTimeInMillis = 500;                 // 水平扩展动画时长
     private long extendBackDelayTimeInMillis = 4000;                // 水平扩展动画播放完成后再播放停留动画的时间间隔
     private long stayTranslateTimeInMillis = 500;                   // 停留动画的时长
     private long musicMarkAnimTimeInMIlls = 2000;                   // 音符单次动画时长
+    private long musicMarkAnimIntervalTimeInMillis = 600;           // 音符动效间隔时长
 
     //解决重复点击动画坚挺多次回调的问题 添加的变量
     boolean mIsPlayStayLeftKadaAnim = false;                        // 是否增在播放停留在左边时的kada动画
     boolean mIsPlayStayRightKadaAnim = false;                       // 是否增在播放停留在右边时的kada动画
-    int mBodyWidth = DpUtils.dp2px(getContext(), 31);           // body的宽度
-    int mArmWidth = DpUtils.dp2px(getContext(), 19);            // arm的宽度
+    int mBodyWidth = DpUtils.dp2px(getContext(), 31);                        // body的宽度
+    int mArmWidth = DpUtils.dp2px(getContext(), 19);                         // arm的宽度
     private long kadaAppearAnimTimeInMills = 500;                   // kada出现动画的执行时间
-    private long kadaArmRotateAnimTimeInMillis = 500;                // 手臂旋转动画执行一次的时间
-    private long kadaArmRotateAnimDelayTimeInMillis = 500;           // 手臂旋转动画延时执行的时间
-    private long kadaDisappearAnimTimeInMillis = 500;                // kada消失动画执行时间
-    private long kadaDisappearAnimDelayTimeInMillis = 1000;          // kada消失动画延时执行的时间
-    private int kadaArmRotateAnimRepeatCount = 2;                    // 手臂旋转动画重复次数
+    private long kadaArmRotateAnimTimeInMillis = 500;               // 手臂旋转动画执行一次的时间
+    private long kadaArmRotateAnimDelayTimeInMillis = 500;          // 手臂旋转动画延时执行的时间
+    private long kadaDisappearAnimTimeInMillis = 500;               // kada消失动画执行时间
+    private long kadaDisappearAnimDelayTimeInMillis = 1000;         // kada消失动画延时执行的时间
+    private int kadaArmRotateAnimRepeatCount = 2;                   // 手臂旋转动画重复次数
 
     //<editor-fold>相关控件
-    private ImageView ivCover;                                      // 封面图
+    private ImageView ivCover;                               // 封面图
     private ImageView ivPlay;                                       // 暂停播放时的播放按钮
     private Group groupStayLeft, groupStayRight;
     private ImageView ivStayLeftBody, ivStayLeftArm;
     private ImageView ivStayRightBody, ivStayRightArm;
     private ImageView ivMusicMark1, ivMusicMark2;
+
     //</editor-fold>
 
-    public KaDaStoryFloatView(@NonNull Context context) {
+    public KaDaStoryFloatWindow(@NonNull Context context) {
         this(context, null);
     }
 
-    public KaDaStoryFloatView(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public KaDaStoryFloatWindow(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public KaDaStoryFloatView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public KaDaStoryFloatWindow(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
+        mContext = context;
+        mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         // 初始化
         mHandler = new Handler(Looper.getMainLooper());
-        mScreenWidth = DpUtils.getScreenWidth(getContext());
-        mScreenHeight = DpUtils.getScreenHeight(getContext());
+        mScreenWidth = DpUtils.getScreenWidth(mContext);
+        mScreenHeight = DpUtils.getScreenHeight(mContext);
         Log.d(TAG, "init()->w:" + mScreenWidth + ",h:" + mScreenHeight);
-        mStatusBarHeight = DpUtils.getStatusBarHeight(getContext());
-        mVisibleWidth = DpUtils.dp2px(getContext(), 30);
+        mStatusBarHeight = DpUtils.getStatusBarHeight(mContext);
+        mVisibleWidth = DpUtils.dp2px(mContext, 30);
         leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
-
-        View.inflate(getContext(), R.layout.view_kada_story_float, this);
+        View.inflate(context, R.layout.view_kada_story_float, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
         ivPlay = findViewById(R.id.float_view_iv_play);
@@ -138,8 +138,8 @@ public class KaDaStoryFloatView extends FrameLayout {
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        mScreenWidth = DpUtils.getScreenWidth(getContext());
-        mScreenHeight = DpUtils.getScreenHeight(getContext());
+        mScreenWidth = DpUtils.getScreenWidth(mContext);
+        mScreenHeight = DpUtils.getScreenHeight(mContext);
         Log.d(TAG, "onConfigurationChanged()->w:" + mScreenWidth + ",h:" + mScreenHeight);
         // 使用屏幕旋转的变化
         // 1、移动到初始位置
@@ -150,7 +150,6 @@ public class KaDaStoryFloatView extends FrameLayout {
                     reset();
                 }
             }, 500); // 这个500毫秒很重要，因为横竖屏切换如果立即移动View达不到一起效果
-
         }
 
         if (mIsPlay) {
@@ -163,39 +162,107 @@ public class KaDaStoryFloatView extends FrameLayout {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (event == null) {
-            return false;
-        }
-        switch (event.getAction()) {
+//        if (event == null) {
+//            return false;
+//        }
+//        switch (event.getAction()) {
+//            case MotionEvent.ACTION_DOWN:
+//                handleActionDown(event);
+//                break;
+//            case MotionEvent.ACTION_MOVE:
+//                handleActionMove(event);
+//                break;
+//            case MotionEvent.ACTION_UP:
+//                handleActionUp(event);
+//                break;
+//        }
+//        return true;
+        // 获取相对屏幕的坐标，即以屏幕左上角为原点
+        int x = (int) event.getRawX();
+        int y = (int) event.getRawY();
+        //下面的这些事件，跟图标的移动无关，为了区分开拖动和点击事件
+        int action = event.getAction();
+        switch (action) {
             case MotionEvent.ACTION_DOWN:
-                handleActionDown(event);
+                mTouchDownTime = System.currentTimeMillis();
+                mTouchStartX = event.getX();
+                mTouchStartY = event.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                handleActionMove(event);
+                //图标移动的逻辑在这里
+                float mMoveStartX = event.getX();
+                float mMoveStartY = event.getY();
+                // 如果移动量大于3才移动
+                if (Math.abs(mTouchStartX - mMoveStartX) > 3
+                        && Math.abs(mTouchStartY - mMoveStartY) > 3) {
+                    // 更新浮动窗口位置参数
+//                    mWmParams.x = (int) (x - mTouchStartX);
+                    mWmParams.y = (int) (y - mTouchStartY);
+                    mWmParams.x = (int) (x);
+                    mWindowManager.updateViewLayout(this, mWmParams);
+                    return false;
+                }
                 break;
             case MotionEvent.ACTION_UP:
-                handleActionUp(event);
+                Log.d(TAG, "onTouchEvent():" +
+                        "\ngetWidth()=" + getWidth() +
+                        "\ngetHeight()=" + getHeight() +
+                        "\ngetX()=" + getX() +
+                        "\ngetY()=" + getY() +
+                        "\ngetLeft()=" + getLeft() +
+                        "\ngetRight()=" + getRight() +
+                        "\nmWmParams.x=" + mWmParams.x +
+                        "\nmWmParams.y=" + mWmParams.y);
+                mTouchUpTime = System.currentTimeMillis();
+                //当从点击到弹起小于半秒的时候,则判断为点击,如果超过则不响应点击事件
+                isClick = (mTouchUpTime - mTouchDownTime) <= TOUCH_TIME_THRESHOLD_IN_MM;
+                if (isClick) {
+                    if (isUnderStay()) {
+                        playExtendAnim(this, getStayPosition());
+                    } else {
+                        Toast.makeText(mContext, "Clicked", Toast.LENGTH_SHORT).show();
+                        if (mListener != null) {
+                            mListener.onFloatClick();
+                        }
+                    }
+                } else {
+                    if (isNeedStay()) {
+                        playStayAnim(this, getStayPosition());
+                    } else {
+                        playNormalAnim();
+//                        if (mIsPlay) {
+//                            playNormalAnim();
+//                            if (mListener != null) {
+//                                mListener.onPlayNormalAnim();
+//                            }
+//                        }
+                    }
+                }
                 break;
         }
+        //响应点击事件
+
         return true;
     }
+
+    boolean isClick = false;
 
     /**
      * Action Down处理
      * 主要记录down时的位置信息即时间
      */
     private void handleActionDown(MotionEvent event) {
-        mOriginalX = getX();
-        mOriginalY = getY();
+        mTouchStartX = event.getX();
+        mTouchStartY = event.getY();
         mOriginalRawX = event.getRawX();
         mOriginalRawY = event.getRawY();
-        mLastTouchDownTime = System.currentTimeMillis();
+        mTouchDownTime = System.currentTimeMillis();
 
 //        stopRotateAnim(this);
-        if (mCallback != null) {
-            mCallback.onFloatPress();
+        if (mListener != null) {
+            mListener.onFloatPress();
         }
-        Log.d(TAG, "handleActionDown()->mOriginalX:" + mOriginalX + ",mOriginalRawX:" + mOriginalRawX);
+        Log.d(TAG, "handleActionDown()->mOriginalX:" + mTouchStartX + ",mOriginalRawX:" + mOriginalRawX);
     }
 
     /**
@@ -203,13 +270,13 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 更新View的位置
      */
     private void handleActionMove(MotionEvent event) {
-        float desX = mOriginalX + event.getRawX() - mOriginalRawX;
-        float desY = mOriginalY + event.getRawY() - mOriginalRawY;
+        float desX = mTouchStartX + event.getRawX() - mOriginalRawX;
+        float desY = mTouchStartY + event.getRawY() - mOriginalRawY;
 
         fixPositionWhileMoving(desX, desY);
 
-        if (mCallback != null) {
-            mCallback.onFloatMove();
+        if (mListener != null) {
+            mListener.onFloatMove();
         }
     }
 
@@ -220,13 +287,13 @@ public class KaDaStoryFloatView extends FrameLayout {
      * @param desY 期待的目标y坐标
      */
     private void fixPositionWhileMoving(float desX, float desY) {
+        Log.d(TAG, "fixPositionWhileMoving()->w:" + getWidth() + ",h:" + getHeight());
         if (desX < -(getWidth() - mVisibleWidth)) {
             desX = -(getWidth() - mVisibleWidth);
         }
         if (desX > mScreenWidth - mVisibleWidth) {
             desX = mScreenWidth - mVisibleWidth;
         }
-        setX(desX);
         if (mIsCoverStatusBar) {
             if (desY < -mStatusBarHeight) {
                 desY = -mStatusBarHeight;
@@ -241,7 +308,13 @@ public class KaDaStoryFloatView extends FrameLayout {
         }
 
         Log.d(TAG, "fixPositionWhileMoving()->x:" + desX + ",y:" + desY);
-        setY(desY);
+//        setX(desX);
+//        setY(desY);
+        if (mWmParams != null && mWindowManager != null) {
+            mWmParams.x = (int) desX;
+            mWmParams.y = (int) desY;
+            mWindowManager.updateViewLayout(this, mWmParams);
+        }
     }
 
     /**
@@ -250,8 +323,9 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 2、判断是否需要执行点击事件；
      */
     private void handleActionUp(MotionEvent event) {
-        mDeltaX = getX() - mOriginalX;
-        mDeltaY = getY() - mOriginalY;
+
+        mDeltaX = mWmParams.x - mTouchStartX;
+        mDeltaY = getY() - mTouchStartY;
         Log.d(TAG, "handleActionUp()->mDeltaX:" + mDeltaX + ",mDeltaY:" + mDeltaY);
         // doNoting
 
@@ -261,17 +335,19 @@ public class KaDaStoryFloatView extends FrameLayout {
                 // 展开，这个展开一段时间后需要自动吸附，注意状态的控制
                 playExtendAnim(this, getStayPosition());
             } else {// 非吸附状态
-                if (mCallback != null) {
-                    mCallback.onFloatClick();
+                if (mListener != null) {
+                    mListener.onFloatClick();
                 }
             }
         } else {
             if (isNeedStay()) {
                 playStayAnim(this, getStayPosition());
             } else {
-                playNormalAnim();
-                if (mCallback != null) {
-                    mCallback.onPlayNormalAnim();
+                if (mIsPlay) {
+                    playNormalAnim();
+                    if (mListener != null) {
+                        mListener.onPlayNormalAnim();
+                    }
                 }
             }
         }
@@ -288,14 +364,13 @@ public class KaDaStoryFloatView extends FrameLayout {
     /**
      * 获取停留的位置（左边还是右边）
      */
-    public @Position
-    int getStayPosition() {
-        Log.d(TAG, "getStayPosition()->getX():" + getX());
-        if (getX() < 0 && getX() >= -(getWidth() - mVisibleWidth)) {
+    public int getStayPosition() {
+        Log.d(TAG, "getStayPosition()->mWmParams.x:" + mWmParams.x);
+        if (mWmParams.x < 0 && mWmParams.x >= -(getWidth() - mVisibleWidth)) {
             Log.d(TAG, "getStayPosition()->direction:left");
             return POS_LEFT;
         }
-        if (getX() > mScreenWidth - getWidth() && getX() <= mScreenWidth - mVisibleWidth) {
+        if (mWmParams.x > mScreenWidth - getWidth() && mWmParams.x <= mScreenWidth - mVisibleWidth) {
             Log.d(TAG, "getStayPosition()->direction:right");
             return POS_RIGHT;
         }
@@ -307,7 +382,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 是否当做点击处理
      */
     private boolean isNeedPerformClick() {
-        return (System.currentTimeMillis() - mLastTouchDownTime < TOUCH_TIME_THRESHOLD_IN_MM)
+        return (System.currentTimeMillis() - mTouchDownTime < TOUCH_TIME_THRESHOLD_IN_MM)
                 && Math.abs(mDeltaX) <= TOUCH_DISTANCE_THRESHOLD_IN_PX
                 && Math.abs(mDeltaY) <= TOUCH_DISTANCE_THRESHOLD_IN_PX;
     }
@@ -324,7 +399,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      */
     private boolean isNeedStayLeft() {
         leftStayEdge = 0;
-        return getX() < leftStayEdge;
+        return mWmParams.x <= leftStayEdge;
     }
 
     /**
@@ -332,7 +407,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      */
     private boolean isNeedStayRight() {
         rightStayEdge = getWidth();
-        return getX() > mScreenWidth - rightStayEdge;
+        return mWmParams.x >= mScreenWidth - rightStayEdge;
     }
 
     /**
@@ -340,9 +415,9 @@ public class KaDaStoryFloatView extends FrameLayout {
      */
     private boolean isNeedStayTop() {
         if (mIsCoverStatusBar) { // 覆盖
-            return getY() < topStayEdge;
+            return mWmParams.y < topStayEdge;
         } else {
-            return (getY() > mStatusBarHeight && getY() < topStayEdge + mStatusBarHeight);
+            return (mWmParams.y > mStatusBarHeight && mWmParams.y < topStayEdge + mStatusBarHeight);
         }
     }
 
@@ -350,11 +425,11 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 是否需要靠底停留
      */
     private boolean isNeedStayBottom() {
-        return getY() < mScreenHeight - bottomStayEdge;
+        return mWmParams.y < mScreenHeight - bottomStayEdge;
     }
 
     public void setCallback(FloatViewListener callback) {
-        this.mCallback = callback;
+        this.mListener = callback;
     }
 
     //<editor-fold>动画效果处理
@@ -363,9 +438,9 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 播放展开动画
      *
      * @param extendTargetView 弹出动画目标View
-     * @param direction        当前停留的位置
+     * @param direction        当前停留的位置 {@link C.Position}
      */
-    private void playExtendAnim(View extendTargetView, @Position int direction) {
+    private void playExtendAnim(View extendTargetView, int direction) {
         if (direction == POS_LEFT) {
             // 从左边往右扩展
             playExtendFromLeft(extendTargetView);
@@ -374,8 +449,8 @@ public class KaDaStoryFloatView extends FrameLayout {
             playExtendFromRight(extendTargetView);
         } else {
             // doNoting
-            if (mCallback != null) {
-                mCallback.onFloatClick();
+            if (mListener != null) {
+                mListener.onFloatClick();
             }
         }
     }
@@ -396,11 +471,7 @@ public class KaDaStoryFloatView extends FrameLayout {
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
         extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkCoverRotateAnim();
-        AnimatorSet extendFromLeftSet = new AnimatorSet();
-        extendFromLeftSet.play(coverRotateAnim).after(extendFromLeftTranX);
-
-        extendFromLeftSet.addListener(new Animator.AnimatorListener() {
+        extendFromLeftTranX.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playExtendAnimFromLeft()->onAnimationStart()");
@@ -423,9 +494,9 @@ public class KaDaStoryFloatView extends FrameLayout {
 
             }
         });
-        extendFromLeftSet.start();
-        if (mCallback != null) {
-            mCallback.onPlayExtendFromLeft();
+        extendFromLeftTranX.start();
+        if (mListener != null) {
+            mListener.onPlayExtendFromLeft();
         }
         if (mHandler != null) {
             mHandler.postDelayed(new Runnable() {
@@ -458,11 +529,7 @@ public class KaDaStoryFloatView extends FrameLayout {
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
-        checkCoverRotateAnim();
-        AnimatorSet extendFromRightSet = new AnimatorSet();
-        extendFromRightSet.play(coverRotateAnim).after(extendFromRightTranX);
-
-        extendFromRightSet.addListener(new Animator.AnimatorListener() {
+        extendFromRightTranX.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playExtendAnimFromRight()->onAnimationStart()");
@@ -485,9 +552,9 @@ public class KaDaStoryFloatView extends FrameLayout {
 
             }
         });
-        extendFromRightSet.start();
-        if (mCallback != null) {
-            mCallback.onPlayExtendFromRight();
+        extendFromRightTranX.start();
+        if (mListener != null) {
+            mListener.onPlayExtendFromRight();
         }
         if (mHandler != null) {
             mHandler.postDelayed(new Runnable() {
@@ -529,9 +596,9 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 播放停靠动画
      *
      * @param stayTargetView 停留动画目标View
-     * @param stayPosition   停留的位置
+     * @param stayPosition   停留的位置 {@link C.Position}
      */
-    public void playStayAnim(View stayTargetView, @Position int stayPosition) {
+    public void playStayAnim(View stayTargetView, int stayPosition) {
         float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
             playStayToLeft(stayTargetView, moveDistance, false);
@@ -564,7 +631,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      */
     public void playStayToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayAnimToLeft()");
-        Log.d(TAG, "playStayAnimToLeft()->getX():" + getX());
+        Log.d(TAG, "playStayAnimToLeft()->mWmParams.x:" + mWmParams.x);
         Log.d(TAG, "playStayAnimToLeft()->translationX:" + stayTargetView.getTranslationX());
         Log.d(TAG, "playStayAnimToLeft()->moveDistance:" + moveDistance);
         Log.d(TAG, "playStayAnimToLeft()->isPlayFromExtend:" + isPlayFromExtend);
@@ -573,15 +640,8 @@ public class KaDaStoryFloatView extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - moveDistance);
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.setDuration(stayTranslateTimeInMillis);
-//        checkCoverRotateAnim();
-//        checkMusicMarkAnimSet(true);
 
-        AnimatorSet stayToLeftSet = new AnimatorSet();
-//        snapLeftSet.play(coverRotateAnim).with(musicMarkAnimSet1).after(translateLeftAnim);
-        stayToLeftSet.play(translateLeftAnim);
-
-
-        stayToLeftSet.addListener(new Animator.AnimatorListener() {
+        translateLeftAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playStayAnimToLeft()->onAnimationStart()");
@@ -604,9 +664,9 @@ public class KaDaStoryFloatView extends FrameLayout {
 
             }
         });
-        stayToLeftSet.start();
-        if (mCallback != null) {
-            mCallback.onPlayStayToLeft(stayTargetView, moveDistance, true);
+        translateLeftAnim.start();
+        if (mListener != null) {
+            mListener.onPlayStayToLeft(stayTargetView, moveDistance, true);
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
@@ -634,15 +694,7 @@ public class KaDaStoryFloatView extends FrameLayout {
                 stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + moveDistance);
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.setDuration(stayTranslateTimeInMillis);
-
-//        checkCoverRotateAnim();
-//        checkMusicMarkAnimSet(true);
-
-        AnimatorSet snapRightSet = new AnimatorSet();
-//        snapRightSet.play(coverRotateAnim).with(musicMarkAnimSet1).after(translateRightAnim);
-        snapRightSet.play(translateRightAnim);
-
-        snapRightSet.addListener(new Animator.AnimatorListener() {
+        translateRightAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playStayAnimToRight()->onAnimationStart()");
@@ -665,9 +717,9 @@ public class KaDaStoryFloatView extends FrameLayout {
 
             }
         });
-        snapRightSet.start();
-        if (mCallback != null) {
-            mCallback.onPlayStayToRight(stayTargetView, moveDistance, isPlayFromExtend);
+        translateRightAnim.start();
+        if (mListener != null) {
+            mListener.onPlayStayToRight(stayTargetView, moveDistance, isPlayFromExtend);
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayRightKadaAnimRunnable);
@@ -919,8 +971,8 @@ public class KaDaStoryFloatView extends FrameLayout {
     private AnimatorSet initMusicMarkAnimSet(View musicMartView) {
         ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_X, 0, 1.5f);
         ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(musicMartView, View.SCALE_Y, 0, 1.5f);
-        ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_X, 0, DpUtils.dp2px(getContext(), 18));
-        ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_Y, 0, -DpUtils.dp2px(getContext(), 48));
+        ObjectAnimator translateXAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_X, 0, DpUtils.dp2px(mContext, 18));
+        ObjectAnimator translateYAnim = ObjectAnimator.ofFloat(musicMartView, View.TRANSLATION_Y, 0, -DpUtils.dp2px(mContext, 48));
 //            ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(ivMusicMark, View.ALPHA, 0, 1);
         scaleXAnim.setRepeatCount(ValueAnimator.INFINITE);
         scaleYAnim.setRepeatCount(ValueAnimator.INFINITE);
@@ -989,7 +1041,7 @@ public class KaDaStoryFloatView extends FrameLayout {
                     }
                     musicMarkAnimSet2.start();
                 }
-            }, 1000);
+            }, musicMarkAnimIntervalTimeInMillis);
         }
 
     }
@@ -1005,21 +1057,47 @@ public class KaDaStoryFloatView extends FrameLayout {
 
     //<editor-fold>对外提供的API
 
-    public void setLayoutParams(WindowManager.LayoutParams params) {
-        this.mParams = params;
+    public void setWindowLayoutParams(WindowManager.LayoutParams params) {
+        mWmParams = params;
+    }
+
+    /**
+     * 更新信息
+     * todo 及时更新封面信息（需要更改事件处理，现有的两个事件无法做到及时更新）
+     */
+//    public void update(StoryInfo storyInfo) {
+    public void update() {
+//        if (storyInfo == null) {
+//            return;
+//        }
+//        String coverNoLetterUrl = storyInfo.getCoverNoLetter();
+//        if (!TextUtils.isEmpty(coverNoLetterUrl)) {
+//            boolean isNeedReset = true;
+//            String tagUrl = (String) ivCover.getTag(R.id.itemView);
+//            if (!TextUtils.isEmpty(tagUrl)) {
+//                if (TextUtils.equals(coverNoLetterUrl, tagUrl)) {
+//                    isNeedReset = false;
+//                }
+//            }
+//
+//            if (isNeedReset) {
+//                ivCover.setTag(R.id.itemView, coverNoLetterUrl);
+//                FrescoUtils.showImg(ivCover, coverNoLetterUrl);
+//            }
+//        }
     }
 
     /**
      * 获取移动的距离
      *
-     * @param stayPosition 停留的位置{@link Position#POS_LEFT},{@link Position#POS_RIGHT},etc
+     * @param stayPosition 停留的位置{@link C.Position#POS_LEFT},{@link C.Position#POS_RIGHT},etc
      * @return 移动的距离
      */
-    public float getStayMoveDistance(@Position int stayPosition) {
+    public float getStayMoveDistance(int stayPosition) {
         if (stayPosition == POS_LEFT) {
-            return Math.abs(getX() + getWidth() - mVisibleWidth);
+            return Math.abs(mWmParams.x + getWidth() - mVisibleWidth);
         } else if (stayPosition == POS_RIGHT) {
-            return Math.abs(mScreenWidth - mVisibleWidth - getX());
+            return Math.abs(mScreenWidth - mVisibleWidth - mWmParams.x);
         } else {
             return 0;
         }
@@ -1029,6 +1107,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 显示
      */
     public void show(boolean isPlay) {
+        Log.d(TAG, "show()->w:" + getWidth() + ",h:" + getHeight());
         setVisibility(VISIBLE);
         if (isPlay) {
             play();
@@ -1048,6 +1127,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 播放
      */
     public void play() {
+        Log.d(TAG, "play()");
         mIsPlay = true;
         playCoverRotateAnim();
         playMusicMarkAnim();
@@ -1064,9 +1144,37 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 暂停
      */
     public void pause() {
+        Log.d(TAG, "pause");
         mIsPlay = false;
         pauseCoverRotateAnim();
         pauseMusicMarkAnim();
+    }
+
+    /**
+     * 资源释放操作
+     */
+    public void release() {
+        Log.d(TAG, "release()");
+        if (coverRotateAnim != null) {
+            coverRotateAnim.removeAllListeners();
+            coverRotateAnim.removeAllUpdateListeners();
+            coverRotateAnim = null;
+        }
+        if (musicMarkAnimSet1 != null) {
+            musicMarkAnimSet1.removeAllListeners();
+            musicMarkAnimSet1 = null;
+        }
+        if (musicMarkAnimSet2 != null) {
+            musicMarkAnimSet2.removeAllListeners();
+            musicMarkAnimSet2 = null;
+        }
+        if (mHandler != null) {
+            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
+            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
+            stayLeftKadaAnimRunnable = null;
+            stayRightKadaAnimRunnable = null;
+            mHandler = null;
+        }
     }
 
     public void setIsCoverStatusBar(boolean isCoverStatusBar) {
@@ -1093,6 +1201,7 @@ public class KaDaStoryFloatView extends FrameLayout {
      * 重置 回到左下方
      */
     public void reset() {
+        Log.d(TAG, "reset()->reset to:(0, " + (mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge) + ")");
         move(0, mScreenHeight - mStatusBarHeight - getHeight() - bottomStayEdge);
     }
 
@@ -1103,35 +1212,10 @@ public class KaDaStoryFloatView extends FrameLayout {
      * @param desY 目标位置y坐标
      */
     public void move(float desX, float desY) {
+        Log.d(TAG, "move()->move to:(" + desX + "," + desY + "/");
         fixPositionWhileMoving(desX, desY);
     }
     //</editor-fold>
-
-    /**
-     * 资源释放操作
-     */
-    public void release() {
-        if (coverRotateAnim != null) {
-            coverRotateAnim.removeAllListeners();
-            coverRotateAnim.removeAllUpdateListeners();
-            coverRotateAnim = null;
-        }
-        if (musicMarkAnimSet1 != null) {
-            musicMarkAnimSet1.removeAllListeners();
-            musicMarkAnimSet1 = null;
-        }
-        if (musicMarkAnimSet2 != null) {
-            musicMarkAnimSet2.removeAllListeners();
-            musicMarkAnimSet2 = null;
-        }
-        if (mHandler != null) {
-            mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
-            mHandler.removeCallbacks(stayRightKadaAnimRunnable);
-            stayLeftKadaAnimRunnable = null;
-            stayRightKadaAnimRunnable = null;
-            mHandler = null;
-        }
-    }
 
     public interface FloatViewListener {
 
@@ -1139,6 +1223,7 @@ public class KaDaStoryFloatView extends FrameLayout {
          * 悬浮窗按下回调
          */
         default void onFloatPress() {
+
         }
 
         /**
@@ -1146,6 +1231,7 @@ public class KaDaStoryFloatView extends FrameLayout {
          * never do too much create ops!!!
          */
         default void onFloatMove() {
+
         }
 
         /**
@@ -1161,6 +1247,7 @@ public class KaDaStoryFloatView extends FrameLayout {
          * @param isFromExtend 是否扩展动画后的停靠
          */
         default void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend) {
+
         }
 
         /**
@@ -1171,31 +1258,28 @@ public class KaDaStoryFloatView extends FrameLayout {
          * @param isFromExtend 是否扩展动画后的停靠
          */
         default void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend) {
+
         }
 
         /**
          * 从左扩展
          */
         default void onPlayExtendFromLeft() {
+
         }
 
         /**
          * 从右扩展
          */
         default void onPlayExtendFromRight() {
+
         }
 
         /**
          * 正常动画
          */
         default void onPlayNormalAnim() {
+
         }
-    }
-
-    /**
-     * 动画接口
-     */
-    public interface FloatAnimCallback {
-
     }
 }

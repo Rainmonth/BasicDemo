@@ -1,5 +1,6 @@
 package cn.rainmonth.basicdemo.ui.floatview;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -10,6 +11,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import cn.rainmonth.basicdemo.R;
+import cn.rainmonth.basicdemo.ui.floatview.permission.FloatPermissionManager;
+import cn.rainmonth.basicdemo.ui.floatview.view.IFloatView;
+import cn.rainmonth.basicdemo.ui.floatview.view.KaDaStoryFloatView;
+
+import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_LEFT;
+import static cn.rainmonth.basicdemo.ui.floatview.view.C.Position.POS_RIGHT;
 
 public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStoryFloatView.FloatViewListener, View.OnClickListener {
     ConstraintLayout csMainContainer;
@@ -63,19 +70,28 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         btnStayRightAnim.setOnClickListener(this);
         btnLeftExtendAnim.setOnClickListener(this);
         btnRightExtendAnim.setOnClickListener(this);
-
-        if (floatContainer == null) {
-            initFloatContainer();
-        }
-
-        floatContainer.setCallback(this);
-        floatContainer.setBottomStayEdge(DpUtils.dp2px(this, 50));
     }
 
-    private void initFloatContainer() {
-        floatContainer = new KaDaStoryFloatView(this);
+
+    private void addInnerFloatContainer() {
+        if (floatContainer == null) {
+            floatContainer = new KaDaStoryFloatView(this);
+        }
+        floatContainer.setCallback(this);
+        floatContainer.setBottomStayEdge(DpUtils.dp2px(this, 50));
         ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(DpUtils.dp2px(this, 84), DpUtils.dp2px(this, 84));
+        params.bottomToBottom = R.id.cs_main_container;
+        params.startToStart = R.id.cs_main_container;
+        removeInnerFloatContainer();
         csMainContainer.addView(floatContainer, params);
+    }
+
+    private void removeInnerFloatContainer() {
+        if (floatContainer != null && floatContainer.isAttachedToWindow()) {
+            csMainContainer.removeView(floatContainer);
+            floatContainer.release();
+            floatContainer = null;
+        }
     }
 
     @Override
@@ -122,63 +138,115 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         Toast.makeText(FloatViewDemoActivity.this, content, Toast.LENGTH_SHORT).show();
     }
 
+    public IFloatView getRealFloatView() {
+        boolean isPermission = FloatPermissionManager.getInstance().applyFloatWindow(this);
+        if (isPermission || Build.VERSION.SDK_INT < 24) {
+            return FloatWindowManager.getFloatWindow();
+        } else {
+            if (floatContainer == null) {
+                addInnerFloatContainer();
+            }
+            return floatContainer;
+        }
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_play:
-                floatContainer.play();
+                if (floatContainer != null)
+                    floatContainer.play();
                 break;
             case R.id.btn_pause:
-                floatContainer.pause();
+                if (floatContainer != null)
+                    floatContainer.pause();
                 break;
             case R.id.btn_reset:
-                floatContainer.reset();
+                if (floatContainer != null)
+                    floatContainer.reset();
                 break;
             case R.id.btn_show_float:
-                floatContainer.show(false);
+//                floatContainer.show(false);
+                boolean isPermission = FloatPermissionManager.getInstance().applyFloatWindow(this);
+                //有对应权限或者系统版本小于7.0
+                if (isPermission || Build.VERSION.SDK_INT < 24) {
+                    //开启悬浮窗
+                    removeInnerFloatContainer();
+                    FloatActionController.getInstance().startMonkServer(this);
+                } else {
+                    addInnerFloatContainer();
+                    floatContainer.show(false);
+                }
                 break;
             case R.id.btn_hide_float:
-                floatContainer.hide();
+                if (floatContainer != null) {
+                    floatContainer.hide();
+                }
                 break;
             case R.id.btn_move_to_left:
                 floatContainer.move(0, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
                 break;
             case R.id.btn_move_to_right:
-                floatContainer.move(DpUtils.getScreenWidth(this) - floatContainer.getWidth(), (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
+                if (floatContainer != null) {
+                    floatContainer.move(DpUtils.getScreenWidth(this) - floatContainer.getWidth(), (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
+                }
                 break;
             case R.id.btn_move_to_top:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, 0);
+                if (floatContainer != null) {
+                    floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, 0);
+                }
                 break;
             case R.id.btn_move_to_bottom:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, DpUtils.getScreenHeight(this));
+                if (floatContainer != null) {
+                    floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, DpUtils.getScreenHeight(this));
+                }
                 break;
             case R.id.btn_move_to_center:
-                floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
+                if (floatContainer != null) {
+                    floatContainer.move((DpUtils.getScreenWidth(this) - floatContainer.getWidth()) / 2f, (DpUtils.getScreenHeight(this) - floatContainer.getHeight()) / 2f);
+                }
                 break;
             case R.id.btn_play_left_kada_anim:
-                floatContainer.playStayLeftKadaAnim();
+                if (floatContainer != null) {
+                    floatContainer.playStayLeftKadaAnim();
+                }
                 break;
             case R.id.btn_play_right_kada_anim:
-                floatContainer.playStayRightKadaAnim();
+                if (floatContainer != null) {
+                    floatContainer.playStayRightKadaAnim();
+                }
                 break;
             case R.id.btn_play_left_stay_anim:
-                floatContainer.playStayToLeft(floatContainer, floatContainer.getStayMoveDistance(KaDaStoryFloatView.POS_LEFT), false);
+//                if (floatContainer != null) {
+//                    floatContainer.playStayToLeft(floatContainer, floatContainer.getStayMoveDistance(POS_LEFT), false);
+//                }
+                float leftMoveDistance = FloatWindowManager.getMoveDistance(POS_LEFT);
+                FloatWindowManager.playStayToLeft(leftMoveDistance, false);
                 break;
             case R.id.btn_play_right_stay_anim:
-                floatContainer.playStayToRight(floatContainer, floatContainer.getStayMoveDistance(KaDaStoryFloatView.POS_RIGHT), false);
+//                if (floatContainer != null) {
+//                    floatContainer.playStayToRight(floatContainer, floatContainer.getStayMoveDistance(POS_RIGHT), false);
+//                }
+
+                float rightMoveDistance = FloatWindowManager.getMoveDistance(POS_LEFT);
+                FloatWindowManager.playStayToRight(rightMoveDistance, false);
                 break;
             case R.id.btn_play_left_extend_anim:
-                if (floatContainer.getStayPosition() == KaDaStoryFloatView.POS_LEFT) {
-                    floatContainer.playExtendFromLeft(floatContainer);
-                } else {
-                    toast("请先将目标View移动道左边");
+                if (floatContainer != null) {
+                    if (floatContainer.getStayPosition() == POS_LEFT) {
+                        floatContainer.playExtendFromLeft(floatContainer);
+                    } else {
+                        toast("请先将目标View移动道左边");
+                    }
                 }
                 break;
             case R.id.btn_play_right_extend_anim:
-                if (floatContainer.getStayPosition() == KaDaStoryFloatView.POS_RIGHT) {
-                    floatContainer.playExtendFromRight(floatContainer);
-                } else {
-                    toast("请先将目标View移动道右边");
+                if (floatContainer != null) {
+                    if (floatContainer.getStayPosition() == POS_RIGHT) {
+                        floatContainer.playExtendFromRight(floatContainer);
+                    } else {
+                        toast("请先将目标View移动道右边");
+                    }
                 }
                 break;
         }
