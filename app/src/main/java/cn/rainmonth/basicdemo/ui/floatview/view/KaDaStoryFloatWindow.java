@@ -118,7 +118,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         mStatusBarHeight = DpUtils.getStatusBarHeight(mContext);
         mVisibleWidth = DpUtils.dp2px(mContext, 30);
         leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
-        View.inflate(context, R.layout.view_kada_story_float, this);
+        View.inflate(context, R.layout.view_kada_story_float_window, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
         ivPlay = findViewById(R.id.float_view_iv_play);

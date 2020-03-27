@@ -17,13 +17,9 @@ import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.Group;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 import cn.rainmonth.basicdemo.R;
 import cn.rainmonth.basicdemo.ui.floatview.DpUtils;
@@ -111,7 +107,7 @@ public class KaDaStoryFloatView extends FrameLayout implements IFloatView{
         mVisibleWidth = DpUtils.dp2px(getContext(), 30);
         leftStayEdge = rightStayEdge = topStayEdge = bottomStayEdge = 0;
 
-        View.inflate(getContext(), R.layout.view_kada_story_float, this);
+        View.inflate(getContext(), R.layout.view_kada_story_float_view, this);
 
         ivCover = findViewById(R.id.float_view_iv_cover);
         ivPlay = findViewById(R.id.float_view_iv_play);

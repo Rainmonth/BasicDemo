@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="84dp"
+    android:layout_height="84dp"
+    android:background="@android:color/holo_red_dark"
+    tools:ignore="ContentDescription">
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/grout_stay_left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="float_view_iv_stay_left_body,float_view_iv_stay_left_arm "
+        tools:visibility="gone" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/grout_stay_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="float_view_iv_stay_right_body,float_view_iv_stay_right_arm "
+        tools:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_stay_left_body"
+        android:layout_width="31dp"
+        android:layout_height="74dp"
+        android:src="@drawable/float_view_icon_stay_left_kada_body"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_stay_right_body"
+        android:layout_width="31dp"
+        android:layout_height="74dp"
+        android:src="@drawable/float_view_icon_stay_right_kada_body"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_cover"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/icon_user_login_default"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_play"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/float_view_icon_play"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="@+id/float_view_iv_cover"
+        app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover"
+        app:layout_constraintStart_toStartOf="@+id/float_view_iv_cover"
+        app:layout_constraintTop_toTopOf="@+id/float_view_iv_cover" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_stay_left_arm"
+        android:layout_width="19dp"
+        android:layout_height="25dp"
+        android:layout_marginTop="38dp"
+        android:layout_marginEnd="7dp"
+        android:src="@drawable/float_view_icon_stay_left_kada_arm"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/float_view_iv_stay_left_body" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_stay_right_arm"
+        android:layout_width="19dp"
+        android:layout_height="25dp"
+        android:layout_marginStart="7dp"
+        android:layout_marginTop="38dp"
+        android:src="@drawable/float_view_icon_stay_right_kada_arm"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/float_view_iv_stay_right_body" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_music_mark1"
+        android:layout_width="7dp"
+        android:layout_height="10.5dp"
+        android:src="@drawable/float_view_icon_music_mark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover" />
+
+    <ImageView
+        android:id="@+id/float_view_iv_music_mark2"
+        android:layout_width="7dp"
+        android:layout_height="10.5dp"
+        android:src="@drawable/float_view_icon_music_mark"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/float_view_iv_cover" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

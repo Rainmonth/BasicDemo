@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="84dp"
     android:layout_height="84dp"
+    android:background="@android:color/holo_blue_dark"
     tools:ignore="ContentDescription">
 
     <androidx.constraintlayout.widget.Group
