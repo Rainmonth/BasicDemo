@@ -67,6 +67,8 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
     private ObjectAnimator coverRotateAnim;                         // 封面旋转动画
     private AnimatorSet musicMarkAnimSet1, musicMarkAnimSet2;       // 音符动画
+    private AnimatorSet mStayToLeftSet;                             // 停留在左侧的动画
+    private AnimatorSet mStayToRightSet;                            // 停留在右侧的动画
     private long rotateAnimTimeInMillis = 6000;                     // 封面旋转动画时长
     private long extendTranslateTimeInMillis = 500;                 // 水平扩展动画时长
     private long extendBackDelayTimeInMillis = 4000;                // 水平扩展动画播放完成后再播放停留动画的时间间隔
@@ -188,6 +190,12 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
                     mWindowManager.updateViewLayout(this, mWmParams);
                     if (mWmParams.x < mScreenWidth) {
                         if (isUnderStay()) {
+                            if (mStayToLeftSet != null) {
+                                mStayToLeftSet.cancel();
+                            }
+                            if (mStayToRightSet != null) {
+                                mStayToRightSet.cancel();
+                            }
                             setTranslationX(0);
                             if (groupStayLeft.getVisibility() == VISIBLE) {
                                 groupStayLeft.setVisibility(GONE);
@@ -453,10 +461,12 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
             }
         });
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.play(translateLeftAnim).after(windowTLAnim);
-        animatorSet.setDuration(stayTranslateTimeInMillis);
-        animatorSet.start();
+        if (mStayToLeftSet == null) {
+            mStayToLeftSet = new AnimatorSet();
+            mStayToLeftSet.play(translateLeftAnim).after(windowTLAnim);
+            mStayToLeftSet.setDuration(stayTranslateTimeInMillis);
+        }
+        mStayToLeftSet.start();
 
         if (mListener != null) {
             mListener.onPlayStayToLeft(this, moveDistance, true);
@@ -527,10 +537,12 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
             }
         });
 
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.play(translateRightAnim).after(windowTRAnim);
-        animatorSet.setDuration(stayTranslateTimeInMillis);
-        animatorSet.start();
+        if (mStayToLeftSet == null) {
+            mStayToRightSet = new AnimatorSet();
+            mStayToRightSet.play(translateRightAnim).after(windowTRAnim);
+            mStayToRightSet.setDuration(stayTranslateTimeInMillis);
+        }
+        mStayToRightSet.start();
 
         if (mListener != null) {
             mListener.onPlayStayToRight(this, moveDistance, isPlayFromExtend);
