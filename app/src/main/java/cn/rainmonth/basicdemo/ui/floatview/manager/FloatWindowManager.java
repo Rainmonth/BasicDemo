@@ -126,25 +126,25 @@ public class FloatWindowManager {
 
     public static void playExtendFromLeft() {
         if (mFloatLayout != null) {
-            mFloatLayout.playExtendFromLeft(mFloatLayout);
+            mFloatLayout.playExtendFromLeft();
         }
     }
 
     public static void playExtendFromRight() {
         if (mFloatLayout != null) {
-            mFloatLayout.playExtendFromRight(mFloatLayout);
+            mFloatLayout.playExtendFromRight();
         }
     }
 
     public static void playStayToLeft(float moveDistance, boolean isPlayFromExtend) {
         if (mFloatLayout != null) {
-            mFloatLayout.playStayToLeft(mFloatLayout, moveDistance, isPlayFromExtend);
+            mFloatLayout.playStayToLeft(moveDistance, isPlayFromExtend);
         }
     }
 
     public static void playStayToRight(float moveDistance, boolean isPlayFromExtend) {
         if (mFloatLayout != null) {
-            mFloatLayout.playStayToRight(mFloatLayout, moveDistance, isPlayFromExtend);
+            mFloatLayout.playStayToRight(moveDistance, isPlayFromExtend);
         }
     }
 

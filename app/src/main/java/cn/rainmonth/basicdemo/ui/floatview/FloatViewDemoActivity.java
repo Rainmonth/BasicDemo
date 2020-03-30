@@ -110,7 +110,7 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
     }
 
     @Override
-    public void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend) {
+    public void onPlayStayToLeft(float moveDistance, boolean isFromExtend) {
         toast("播放向左吸附动画");
     }
 

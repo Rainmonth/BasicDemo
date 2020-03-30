@@ -231,7 +231,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
                     }
                 } else {
                     if (isNeedStay()) {
-                        playStayAnim(this, getStayPosition());
+                        playStayAnim(getStayPosition());
                     } else {
                         playNormalAnim();
 //                        if (mIsPlay) {
@@ -306,7 +306,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         playMusicMarkAnim();
 
         if (isNeedStay()) {
-            playStayAnim(this, getStayPosition());
+            playStayAnim(getStayPosition());
         } else {
             playNormalAnim();
         }
@@ -398,16 +398,19 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     }
 
     @Override
-    public void playStayToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayToLeft(float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayToLeft()");
         Log.d(TAG, "playStayToLeft()->mWmParams.x:" + mWmParams.x);
-        Log.d(TAG, "playStayToLeft()->translationX:" + stayTargetView.getTranslationX());
+        Log.d(TAG, "playStayToLeft()->translationX:" + getTranslationX());
         Log.d(TAG, "playStayToLeft()->moveDistance:" + moveDistance);
         Log.d(TAG, "playStayToLeft()->isPlayFromExtend:" + isPlayFromExtend);
         if (mIsUnderStay) {
             Log.e(TAG, "playStayToLeft()->当前已处于stay状态");
             return;
         }
+
+        Log.d(TAG, "playStayToLeft()->mIsUnderStay:改为true");
+        mIsUnderStay = true;
 
         ValueAnimator windowTLAnim = ValueAnimator.ofInt(mWmParams.x, 0);
         windowTLAnim.setDuration(300);
@@ -424,22 +427,20 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
             }
         });
         // 因为currentX和maxLeftX一直会变，故用局部变量
-        ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
-                stayTargetView.getTranslationX(), stayTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
+        ObjectAnimator translateLeftAnim = ObjectAnimator.ofFloat(this, View.TRANSLATION_X,
+                getTranslationX(), getTranslationX() - (getWidth() - mVisibleWidth));
         translateLeftAnim.setInterpolator(new LinearInterpolator());
         translateLeftAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playStayToLeft()->onAnimationStart()");
-                Log.d(TAG, "playStayToLeft()->mIsUnderStay:改为true");
-                Log.d(TAG, "tx:" + stayTargetView.getTranslationX());
-                mIsUnderStay = true;
+                Log.d(TAG, "tx:" + getTranslationX());
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
                 Log.d(TAG, "playStayToLeft()->onAnimationEnd()");
-                Log.d(TAG, "tx:" + stayTargetView.getTranslationX());
+                Log.d(TAG, "tx:" + getTranslationX());
             }
 
             @Override
@@ -458,7 +459,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         animatorSet.start();
 
         if (mListener != null) {
-            mListener.onPlayStayToLeft(stayTargetView, moveDistance, true);
+            mListener.onPlayStayToLeft(this, moveDistance, true);
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayLeftKadaAnimRunnable);
@@ -469,16 +470,19 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     }
 
     @Override
-    public void playStayToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend) {
+    public void playStayToRight(float moveDistance, boolean isPlayFromExtend) {
         Log.d(TAG, "playStayToRight()");
         Log.d(TAG, "playStayToLeft()->mWmParams.x:" + mWmParams.x);
-        Log.d(TAG, "playStayToLeft()->translationX:" + stayTargetView.getTranslationX());
+        Log.d(TAG, "playStayToLeft()->translationX:" + getTranslationX());
         Log.d(TAG, "playStayToLeft()->moveDistance:" + moveDistance);
         Log.d(TAG, "playStayToRight()->isPlayFromExtend:" + isPlayFromExtend);
         if (mIsUnderStay) {
             Log.e(TAG, "playStayToRight()->当前已处于stay状态");
             return;
         }
+
+        Log.d(TAG, "playStayToRight()->mIsUnderStay:改为true");
+        mIsUnderStay = true;
 
         ValueAnimator windowTRAnim = ValueAnimator.ofInt(mWmParams.x, (int) mScreenWidth);
         windowTRAnim.setDuration(300);
@@ -496,22 +500,20 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
         });
         // 因为currentX和maxRightX一直会变，故用局部变量
-        ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(stayTargetView, View.TRANSLATION_X,
-                stayTargetView.getTranslationX(), stayTargetView.getTranslationX() + getWidth() - mVisibleWidth);
+        ObjectAnimator translateRightAnim = ObjectAnimator.ofFloat(this, View.TRANSLATION_X,
+                getTranslationX(), getTranslationX() + getWidth() - mVisibleWidth);
         translateRightAnim.setInterpolator(new LinearInterpolator());
         translateRightAnim.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playStayToRight()->onAnimationStart()");
-                Log.d(TAG, "playStayToRight()->mIsUnderStay:改为true");
-                Log.d(TAG, "tx:" + stayTargetView.getTranslationX());
-                mIsUnderStay = true;
+                Log.d(TAG, "tx:" + getTranslationX());
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
                 Log.d(TAG, "playStayToRight()->onAnimationEnd()");
-                Log.d(TAG, "playStayToRight()->tx:" + stayTargetView.getTranslationX());
+                Log.d(TAG, "playStayToRight()->tx:" + getTranslationX());
             }
 
             @Override
@@ -531,7 +533,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         animatorSet.start();
 
         if (mListener != null) {
-            mListener.onPlayStayToRight(stayTargetView, moveDistance, isPlayFromExtend);
+            mListener.onPlayStayToRight(this, moveDistance, isPlayFromExtend);
         }
         if (mHandler != null) {
             mHandler.removeCallbacks(stayRightKadaAnimRunnable);
@@ -540,8 +542,9 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         }
     }
 
+
     @Override
-    public void playExtendFromLeft(final View extendTargetView) {
+    public void playExtendFromLeft() {
         Log.d(TAG, "playExtendAnimFromLeft()");
         if (getStayPosition() != POS_LEFT) {
             Log.e(TAG, "playExtendFromLeft()->" + "当前未停留在左侧");
@@ -551,8 +554,8 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         groupStayLeft.setVisibility(GONE);
         groupStayRight.setVisibility(GONE);
 
-        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() + (getWidth() - mVisibleWidth));
+        ObjectAnimator extendFromLeftTranX = ObjectAnimator.ofFloat(this, View.TRANSLATION_X,
+                getTranslationX(), getTranslationX() + (getWidth() - mVisibleWidth));
         extendFromLeftTranX.setInterpolator(new LinearInterpolator());
         extendFromLeftTranX.setDuration(extendTranslateTimeInMillis);
 
@@ -590,7 +593,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToLeft()) {
                         Log.d(TAG, "playExtendFromLeft()->吸附到左边");
-                        playStayToLeft(extendTargetView, getWidth() - mVisibleWidth, true);
+                        playStayToLeft(getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendFromLeft()->不需要吸附到左边");
                     }
@@ -600,7 +603,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     }
 
     @Override
-    public void playExtendFromRight(final View extendTargetView) {
+    public void playExtendFromRight() {
         if (getStayPosition() != POS_RIGHT) {
             Log.e(TAG, "playExtendFromRight()->" + "当前未停留在左侧");
             return;
@@ -609,8 +612,8 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         // 弹出时只显示封面和音符，隐藏螃蟹
         groupStayLeft.setVisibility(GONE);
         groupStayRight.setVisibility(GONE);
-        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(extendTargetView, View.TRANSLATION_X,
-                extendTargetView.getTranslationX(), extendTargetView.getTranslationX() - (getWidth() - mVisibleWidth));
+        ObjectAnimator extendFromRightTranX = ObjectAnimator.ofFloat(this, View.TRANSLATION_X,
+                getTranslationX(), getTranslationX() - (getWidth() - mVisibleWidth));
         extendFromRightTranX.setInterpolator(new LinearInterpolator());
         extendFromRightTranX.setDuration(extendTranslateTimeInMillis);
 
@@ -619,14 +622,14 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "playExtendFromRight()->onAnimationStart()");
                 Log.d(TAG, "playExtendFromRight()->mIsUnderStay:改为false");
-                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
+                Log.d(TAG, "playExtendFromRight()->tx:" + getTranslationX());
                 mIsUnderStay = false;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
                 Log.d(TAG, "playExtendFromRight()->onAnimationEnd()");
-                Log.d(TAG, "playExtendFromRight()->tx:" + extendTargetView.getTranslationX());
+                Log.d(TAG, "playExtendFromRight()->tx:" + getTranslationX());
             }
 
             @Override
@@ -650,7 +653,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
                     // 判断是否需要进行回弹动画
                     if (isNeedStayBackToRight()) {
                         Log.d(TAG, "playExtendFromRight()->吸附到右边");
-                        playStayToRight(extendTargetView, getWidth() - mVisibleWidth, true);
+                        playStayToRight(getWidth() - mVisibleWidth, true);
                     } else {
                         Log.d(TAG, "playExtendFromRight()->不需要吸附到右边");
                     }
@@ -722,10 +725,10 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     private void playExtendAnim(View extendTargetView, int direction) {
         if (direction == POS_LEFT) {
             // 从左边往右扩展
-            playExtendFromLeft(extendTargetView);
+            playExtendFromLeft();
         } else if (direction == POS_RIGHT) {
             // 从右边往左扩展
-            playExtendFromRight(extendTargetView);
+            playExtendFromRight();
         } else {
             // doNoting
             if (mListener != null) {
@@ -738,15 +741,14 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
     /**
      * 播放停靠动画
      *
-     * @param stayTargetView 停留动画目标View
-     * @param stayPosition   停留的位置 {@link C.Position}
+     * @param stayPosition 停留的位置 {@link C.Position}
      */
-    public void playStayAnim(View stayTargetView, int stayPosition) {
+    public void playStayAnim(int stayPosition) {
         float moveDistance = getStayMoveDistance(stayPosition);
         if (stayPosition == POS_LEFT) {
-            playStayToLeft(stayTargetView, moveDistance, false);
+            playStayToLeft(moveDistance, false);
         } else if (stayPosition == POS_RIGHT) {
-            playStayToRight(stayTargetView, moveDistance, false);
+            playStayToRight(moveDistance, false);
         }
     }
 

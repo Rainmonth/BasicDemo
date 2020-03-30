@@ -65,7 +65,7 @@ public interface IFloatView {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否来自扩展动画
      */
-    void playStayToLeft(View stayTargetView, float moveDistance, boolean isPlayFromExtend);
+    void playStayToLeft(float moveDistance, boolean isPlayFromExtend);
 
     /**
      * 停到右侧动画
@@ -73,12 +73,12 @@ public interface IFloatView {
      * @param moveDistance     移动距离
      * @param isPlayFromExtend 是否来自扩展动画
      */
-    void playStayToRight(View stayTargetView, float moveDistance, boolean isPlayFromExtend);
+    void playStayToRight(float moveDistance, boolean isPlayFromExtend);
 
     /**
      * 从左侧扩展动画
      */
-    void playExtendFromLeft(View extendTargetView);
+    void playExtendFromLeft();
 
     /**
      * 扩展后是否需要停靠到左边
@@ -97,6 +97,6 @@ public interface IFloatView {
     /**
      * 从右侧扩展动画
      */
-    void playExtendFromRight(View extendTargetView);
+    void playExtendFromRight();
 
 }
