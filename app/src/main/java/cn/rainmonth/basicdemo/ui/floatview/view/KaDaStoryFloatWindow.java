@@ -164,21 +164,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-//        if (event == null) {
-//            return false;
-//        }
-//        switch (event.getAction()) {
-//            case MotionEvent.ACTION_DOWN:
-//                handleActionDown(event);
-//                break;
-//            case MotionEvent.ACTION_MOVE:
-//                handleActionMove(event);
-//                break;
-//            case MotionEvent.ACTION_UP:
-//                handleActionUp(event);
-//                break;
-//        }
-//        return true;
         // 获取相对屏幕的坐标，即以屏幕左上角为原点
         int x = (int) event.getRawX();
         int y = (int) event.getRawY();
@@ -841,15 +826,15 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         kadaStayLeftArmRotate.setRepeatCount(kadaArmRotateAnimRepeatCount);
 
         // 消失动画
-        AnimatorSet kadaDisappearSet = new AnimatorSet();
+        AnimatorSet kadaLeftDisappearSet = new AnimatorSet();
         ObjectAnimator kadaStayLeftBodyOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftBody, View.TRANSLATION_X,
                 ivStayLeftBody.getTranslationX(), ivStayLeftBody.getTranslationX() - mBodyWidth);
         ObjectAnimator kadaStayLeftArmOutTranslateX = ObjectAnimator.ofFloat(ivStayLeftArm, View.TRANSLATION_X,
                 ivStayLeftArm.getTranslationX(), ivStayLeftArm.getTranslationX() - mBodyWidth);
-        kadaDisappearSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
-        kadaDisappearSet.setStartDelay(kadaDisappearAnimDelayTimeInMillis);
-        kadaDisappearSet.setDuration(kadaDisappearAnimTimeInMillis);
-        kadaDisappearSet.addListener(new Animator.AnimatorListener() {
+        kadaLeftDisappearSet.playTogether(kadaStayLeftBodyOutTranslateX, kadaStayLeftArmOutTranslateX);
+        kadaLeftDisappearSet.setStartDelay(kadaDisappearAnimDelayTimeInMillis);
+        kadaLeftDisappearSet.setDuration(kadaDisappearAnimTimeInMillis);
+        kadaLeftDisappearSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
                 Log.d(TAG, "left outAnimStart()->translationX:" + ivStayLeftBody.getTranslationX());
@@ -857,7 +842,6 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                mIsUnderStay = false;
                 Log.d(TAG, "left outAnimEnd()->translationX:" + ivStayLeftBody.getTranslationX());
                 // 恢复控件的TranslationX的值
                 ivStayLeftBody.setTranslationX(ivStayLeftBody.getTranslationX() + mBodyWidth);
@@ -877,7 +861,7 @@ public class KaDaStoryFloatWindow extends FrameLayout implements IFloatView {
         });
 
         AnimatorSet stayLeftAnimSet = new AnimatorSet();
-        stayLeftAnimSet.play(kadaStayLeftArmRotate).after(kadaLeftAppearSet).before(kadaDisappearSet);
+        stayLeftAnimSet.play(kadaStayLeftArmRotate).after(kadaLeftAppearSet).before(kadaLeftDisappearSet);
         stayLeftAnimSet.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
