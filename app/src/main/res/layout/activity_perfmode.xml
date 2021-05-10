@@ -202,4 +202,15 @@
         app:layout_constraintWidth_percent="0.25"
         app:xfermode="17" />
 
+    <cn.rainmonth.basicdemo.ui.perf.PerfView
+        android:id="@+id/perf_view_18"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="1dp"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintStart_toEndOf="@id/perf_view_17"
+        app:layout_constraintTop_toBottomOf="@+id/perf_view_12"
+        app:layout_constraintWidth_percent="0.25"
+        app:xfermode="18" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
