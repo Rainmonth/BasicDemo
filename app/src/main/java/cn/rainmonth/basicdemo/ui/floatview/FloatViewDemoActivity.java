@@ -109,12 +109,10 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
         toast("点击");
     }
 
-    @Override
-    public void onPlayStayToLeft(float moveDistance, boolean isFromExtend) {
+    public void onPlayStayToLeft(View targetView, float moveDistance, boolean isFromExtend) {
         toast("播放向左吸附动画");
     }
 
-    @Override
     public void onPlayStayToRight(View targetView, float moveDistance, boolean isFromExtend) {
         toast("播放向右吸附动画");
     }
@@ -146,7 +144,8 @@ public class FloatViewDemoActivity extends AppCompatActivity implements KaDaStor
             if (floatContainer == null) {
                 addInnerFloatContainer();
             }
-            return floatContainer;
+            // todo
+            return null;
         }
     }
 

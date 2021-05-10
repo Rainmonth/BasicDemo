@@ -1,5 +1,14 @@
 <resources>
 
+    <attr name="kada_round_corner_radius" format="dimension" />
+    <attr name="kada_round_corner_radius_percent" format="float" />
+    <attr name="kada_round_left_top_corner_radius" format="dimension" />
+    <attr name="kada_round_right_top_corner_radius" format="dimension" />
+    <attr name="kada_round_left_bottom_corner_radius" format="dimension" />
+    <attr name="kada_round_right_bottom_corner_radius" format="dimension" />
+
+    <attr name="xfermode" format="integer" />
+
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <!-- Customize your theme here. -->
@@ -17,4 +26,31 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+
+    <declare-styleable name="KaDaRateLayout">
+        <attr name="kada_rate_value" format="float" />
+    </declare-styleable>
+
+    <declare-styleable name="KaDaRoundView">
+        <attr name="kada_round_corner_radius" />
+        <attr name="kada_round_corner_radius_percent" />
+        <attr name="kada_round_left_top_corner_radius" />
+        <attr name="kada_round_right_top_corner_radius" />
+        <attr name="kada_round_left_bottom_corner_radius" />
+        <attr name="kada_round_right_bottom_corner_radius" />
+    </declare-styleable>
+
+    <declare-styleable name="KaDaBookItemRoundView">
+        <attr name="kada_round_corner_radius" />
+        <attr name="kada_round_corner_radius_percent" />
+        <attr name="kada_round_left_top_corner_radius" />
+        <attr name="kada_round_right_top_corner_radius" />
+        <attr name="kada_round_left_bottom_corner_radius" />
+        <attr name="kada_round_right_bottom_corner_radius" />
+    </declare-styleable>
+
+
+    <declare-styleable name="PerfView">
+        <attr name="xfermode" />
+    </declare-styleable>
 </resources>

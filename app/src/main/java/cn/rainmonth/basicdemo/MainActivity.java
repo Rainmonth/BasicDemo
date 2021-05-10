@@ -17,6 +17,7 @@ import android.widget.TextView;
 import cn.rainmonth.basicdemo.ui.floatview.FloatViewDemoActivity;
 import cn.rainmonth.basicdemo.ui.material.ScrollingActivity;
 import cn.rainmonth.basicdemo.ui.material.TabbedActivity;
+import cn.rainmonth.basicdemo.ui.viewgroup.ViewGroupActivity;
 import cn.rainmonth.basicdemo.ui.viewpager.ViewPagerDemoActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -33,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
         TextView tvTabbed = findViewById(R.id.tv_tabbed);
         TextView tvViewPager = findViewById(R.id.tv_view_pager);
         TextView tvFloatView = findViewById(R.id.tv_float_view);
+        TextView tvViewGroup = findViewById(R.id.tv_view_group);
+        TextView tvPerfmode = findViewById(R.id.tv_perfmode);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -66,6 +69,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 go(FloatViewDemoActivity.class);
+            }
+        });
+        tvViewGroup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                go(ViewGroupActivity.class);
+            }
+        });
+
+        tvPerfmode.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                go(PerfmodeDemoActivity.class);
             }
         });
     }

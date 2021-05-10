@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="cn.rainmonth.basicdemo">
+
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
@@ -36,6 +37,9 @@
         </activity>
 
         <service android:name=".ui.floatview.service.FloatMonkService" />
+
+        <activity android:name=".ui.viewgroup.ViewGroupActivity" />
+        <activity android:name=".PerfmodeDemoActivity" />
     </application>
 
 </manifest>
